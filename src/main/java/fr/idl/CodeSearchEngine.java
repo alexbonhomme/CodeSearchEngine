@@ -28,7 +28,7 @@ public interface CodeSearchEngine {
   interface Type {
     String getName();
     String getFullyQualifiedPackageName();
-    String getKind();
+    TypeKind getKind();
     Location getDeclaration();
   }
   
