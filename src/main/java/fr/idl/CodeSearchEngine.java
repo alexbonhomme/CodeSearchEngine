@@ -1,4 +1,4 @@
-package fr.idl.cse;
+package main.java.fr.idl;
 
 import java.util.List;
 
