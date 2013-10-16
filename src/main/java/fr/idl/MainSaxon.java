@@ -1,19 +1,18 @@
 package main.java.fr.idl;
 
 import java.io.File;
-import java.sql.Time;
 
+import net.sf.saxon.Configuration;
 import net.sf.saxon.s9api.Axis;
 import net.sf.saxon.s9api.DocumentBuilder;
 import net.sf.saxon.s9api.Processor;
 import net.sf.saxon.s9api.QName;
 import net.sf.saxon.s9api.SaxonApiException;
-import net.sf.saxon.s9api.Serializer;
 import net.sf.saxon.s9api.WhitespaceStrippingPolicy;
 import net.sf.saxon.s9api.XPathCompiler;
 import net.sf.saxon.s9api.XPathSelector;
 import net.sf.saxon.s9api.XQueryCompiler;
-import net.sf.saxon.s9api.XQueryExecutable;
+import net.sf.saxon.s9api.XQueryEvaluator;
 import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmSequenceIterator;
@@ -32,22 +31,33 @@ public class MainSaxon {
 		
 		// start counter
 		startTime = System.currentTimeMillis();
-
+		
+//		Configuration config = new Configuration();
+//        config.setHostLanguage(Configuration.XML10);
+//        config.setLineNumbering(false);
+//        config.setValidation(false);
+//        config.setTiming(false);
+//        
+//        Processor proc = new Processor(config);
+        
         Processor proc = new Processor(false);
-        XPathCompiler xpath = proc.newXPathCompiler();
-//        xpath.declareNamespace("saxon", "http://saxon.sf.net/"); // not actually used, just for demonstration
+        XQueryCompiler xquery = proc.newXQueryCompiler();
 
         DocumentBuilder builder = proc.newDocumentBuilder();
-        builder.setLineNumbering(true);
-        builder.setWhitespaceStrippingPolicy(WhitespaceStrippingPolicy.ALL);
-        XdmNode booksDoc = builder.build(new File( args[0] ));
+        builder.setLineNumbering(false);
+        
+        XdmNode buildedFile = builder.build(new File( args[0] ));
 
         // 
-        XPathSelector selector = xpath.compile("//@filename").load();
-        
-        //
-        System.out.println(selector.toString());
-        
+        XQueryEvaluator selector = xquery.compile("//class[super/extends/name='Exception']/name").load();
+        selector.setContextItem(buildedFile);
+
+        int count=0;
+        for (XdmItem item : selector) {
+			System.out.println(item.getStringValue());
+			++count;
+		}
+        System.out.println("#\n# Number of results : " + count);
         
 //        selector.setContextItem(booksDoc);
 //        QName titleName = new QName("TITLE");
