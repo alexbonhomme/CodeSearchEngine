@@ -6,28 +6,43 @@ import main.java.fr.idl.CodeSearchEngine.TypeKind;
 
 public class TypeImpl implements Type {
 
+	private String name;
+	private String fullyQualifiedPackageName;
+	private TypeKind kind;
+	private Location declaration;
+
+	// Partial
+	public TypeImpl(String name, String fullyQualifiedPackageName,
+			TypeKind kind, Location declaration) {
+		this.name = name;
+		this.fullyQualifiedPackageName = fullyQualifiedPackageName;
+		this.kind = kind;
+		this.declaration = declaration;
+	}
+
+	// Tempo
+	public TypeImpl() {
+
+	}
+
 	@Override
 	public String getName() {
-		// TODO Auto-generated method stub
-		return null;
+		return this.name;
 	}
 
 	@Override
 	public String getFullyQualifiedPackageName() {
-		// TODO Auto-generated method stub
-		return null;
+		return this.fullyQualifiedPackageName;
 	}
 
 	@Override
 	public TypeKind getKind() {
-		// TODO Auto-generated method stub
-		return null;
+		return this.kind;
 	}
 
 	@Override
 	public Location getDeclaration() {
-		// TODO Auto-generated method stub
-		return null;
+		return this.declaration;
 	}
 
 }

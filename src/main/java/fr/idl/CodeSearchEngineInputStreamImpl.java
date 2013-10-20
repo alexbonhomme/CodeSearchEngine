@@ -183,30 +183,82 @@ public class CodeSearchEngineInputStreamImpl implements
 	}
 
 	/**
-	 * @author Julien Duribreux
+	 * @author Julien Duribreux Note : Petit soucis avec certains types
+	 *         abstraits, close enough
 	 */
 	@Override
 	public List<Method> findMethodsReturning(String typeName, InputStream data) {
 		List<Method> listMethod = new ArrayList<Method>();
 
+		boolean function = false;
+		boolean type = false;
+		boolean name = false;
+		boolean typeOK = false;
+		boolean nameOK = false;
+
+		String typeValue = ""; // Returning type
+		String nameValue = ""; // Method name
+
 		XMLInputFactory xmlif = XMLInputFactory.newInstance();
 		try {
 			XMLStreamReader xmlsr = xmlif.createXMLStreamReader(data);
-			System.out.println("prout");
 			while (xmlsr.hasNext()) {
 				int eventType = xmlsr.next();
+				// Analyze each beacon
 				switch (eventType) {
-				case XMLEvent.START_ELEMENT:
-					System.out.println(xmlsr.getName());
-					break;
-				case XMLEvent.CHARACTERS:
-					String chaine = xmlsr.getText();
-					if (!xmlsr.isWhiteSpace()) {
-						System.out.println("\t->\"" + chaine + "\"");
-					}
-					break;
-				default:
-					break;
+					case XMLEvent.START_ELEMENT :
+						// Trace where we are
+						if (xmlsr.getLocalName().equals("function"))
+							function = !function;
+						if (xmlsr.getLocalName().equals("type"))
+							type = !type;
+						if (xmlsr.getLocalName().equals("name"))
+							name = !name;
+						break;
+					case XMLEvent.CHARACTERS :
+						// Extract the return type
+						if (function && type && name && !typeOK) {
+							// System.out.println("Return type : "
+							// + xmlsr.getText());
+							typeValue = xmlsr.getText();
+							typeOK = !typeOK;
+						}
+
+						// Extract the method name
+						if (function && !type && name && typeOK && !nameOK) {
+							// System.out.println("Method name : "
+							// + xmlsr.getText());
+							// System.out.println();
+							nameValue = xmlsr.getText();
+							nameOK = !nameOK;
+						}
+						break;
+					case XMLEvent.END_ELEMENT :
+						// Trace where we are
+						if (xmlsr.getLocalName().equals("function")) {
+							// Adding Method if returning type is correct
+							if (typeValue.equals(typeName)) {
+								MethodImpl method = new MethodImpl(nameValue,
+										new TypeImpl(typeValue, new String(),
+												TypeKind.CLASS,
+												new LocationImpl()),
+										new TypeImpl(), new ArrayList<Type>());
+								listMethod.add(method);
+							}
+							// Reset not matter what
+							function = !function;
+							typeOK = !typeOK; // ready for an other function
+							nameOK = !nameOK;
+							typeValue = "";
+							nameValue = "";
+						}
+						if (xmlsr.getLocalName().equals("type"))
+							type = !type;
+						if (xmlsr.getLocalName().equals("name"))
+							name = !name;
+						break;
+					default :
+						break;
 				}
 			}
 
