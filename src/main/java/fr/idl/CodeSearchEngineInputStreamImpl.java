@@ -100,7 +100,8 @@ public class CodeSearchEngineInputStreamImpl
 	}
 
 	/**
-	 * @author Julien Duribreux
+	 * @author Julien Duribreux Note : Petit soucis avec certains types
+	 *         abstraits, close enough
 	 */
 	@Override
 	public List<Method> findMethodsReturning(String typeName, InputStream data) {
@@ -110,6 +111,10 @@ public class CodeSearchEngineInputStreamImpl
 		boolean type = false;
 		boolean name = false;
 		boolean typeOK = false;
+		boolean nameOK = false;
+
+		String typeValue = ""; // Returning type
+		String nameValue = ""; // Method name
 
 		XMLInputFactory xmlif = XMLInputFactory.newInstance();
 		try {
@@ -130,17 +135,39 @@ public class CodeSearchEngineInputStreamImpl
 					case XMLEvent.CHARACTERS :
 						// Extract the return type
 						if (function && type && name && !typeOK) {
-							System.out.println("Return type : "
-									+ xmlsr.getText());
-							System.out.println();
+							// System.out.println("Return type : "
+							// + xmlsr.getText());
+							typeValue = xmlsr.getText();
 							typeOK = !typeOK;
+						}
+
+						// Extract the method name
+						if (function && !type && name && typeOK && !nameOK) {
+							// System.out.println("Method name : "
+							// + xmlsr.getText());
+							// System.out.println();
+							nameValue = xmlsr.getText();
+							nameOK = !nameOK;
 						}
 						break;
 					case XMLEvent.END_ELEMENT :
 						// Trace where we are
 						if (xmlsr.getLocalName().equals("function")) {
+							// Adding Method if returning type is correct
+							if (typeValue.equals(typeName)) {
+								MethodImpl method = new MethodImpl(nameValue,
+										new TypeImpl(typeValue, new String(),
+												TypeKind.CLASS,
+												new LocationImpl()),
+										new TypeImpl(), new ArrayList<Type>());
+								listMethod.add(method);
+							}
+							// Reset not matter what
 							function = !function;
 							typeOK = !typeOK; // ready for an other function
+							nameOK = !nameOK;
+							typeValue = "";
+							nameValue = "";
 						}
 						if (xmlsr.getLocalName().equals("type"))
 							type = !type;
