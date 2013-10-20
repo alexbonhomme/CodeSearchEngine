@@ -9,9 +9,8 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.events.XMLEvent;
 
-public class CodeSearchEngineInputStreamImpl
-		implements
-			CodeSearchEngineInputStream {
+public class CodeSearchEngineInputStreamImpl implements
+		CodeSearchEngineInputStream {
 
 	@Override
 	public Type findType(String typeName, InputStream data) {
@@ -76,6 +75,7 @@ public class CodeSearchEngineInputStreamImpl
 							continue;
 						}
 
+						MethodImpl method = new MethodImpl();
 						while (xmlsr.hasNext()) {
 							eventType = xmlsr.next();
 
@@ -112,17 +112,17 @@ public class CodeSearchEngineInputStreamImpl
 			while (xmlsr.hasNext()) {
 				int eventType = xmlsr.next();
 				switch (eventType) {
-					case XMLEvent.START_ELEMENT :
-						System.out.println(xmlsr.getName());
-						break;
-					case XMLEvent.CHARACTERS :
-						String chaine = xmlsr.getText();
-						if (!xmlsr.isWhiteSpace()) {
-							System.out.println("\t->\"" + chaine + "\"");
-						}
-						break;
-					default :
-						break;
+				case XMLEvent.START_ELEMENT:
+					System.out.println(xmlsr.getName());
+					break;
+				case XMLEvent.CHARACTERS:
+					String chaine = xmlsr.getText();
+					if (!xmlsr.isWhiteSpace()) {
+						System.out.println("\t->\"" + chaine + "\"");
+					}
+					break;
+				default:
+					break;
 				}
 			}
 
