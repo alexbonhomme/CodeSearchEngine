@@ -1,7 +1,12 @@
 package main.java.fr.idl;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
+
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 
 public class CodeSearchEngineInputStreamImpl implements
 		CodeSearchEngineInputStream {
@@ -38,15 +43,31 @@ public class CodeSearchEngineInputStreamImpl implements
 		return null;
 	}
 
+	/**
+	 * @author Alexandre Bonhomme
+	 */
 	@Override
 	public List<Method> findMethodsOf(String typeName, InputStream data) {
-		// TODO Auto-generated method stub
-		return null;
+		ArrayList<Method> listMethod = new ArrayList<>();
+
+		XMLInputFactory xmlif = XMLInputFactory.newInstance();
+		try {
+			XMLStreamReader xmlsr = xmlif.createXMLStreamReader(data);
+
+			while (xmlsr.hasNext()) {
+				int eventType = xmlsr.next();
+
+			}
+
+		} catch (XMLStreamException e) {
+			throw new RuntimeException(e);
+		}
+
+		return listMethod;
 	}
 
 	@Override
-	public List<CodeSearchEngine.Method> findMethodsReturning(String typeName,
-			InputStream data) {
+	public List<Method> findMethodsReturning(String typeName, InputStream data) {
 		// TODO Auto-generated method stub
 		return null;
 	}

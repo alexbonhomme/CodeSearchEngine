@@ -13,9 +13,15 @@ public class Main {
       System.exit(-1);
     }
 
+<<<<<<< HEAD
     // input source
     InputSource source = new InputSource(args[0]);
 
   }
+=======
+		// input source
+		InputSource data = new InputSource(args[0]);
+	}
+>>>>>>> 49ee2e1ac4babc69ec919c0ae4da5418489268d9
 
 }
