@@ -76,6 +76,7 @@ public class CodeSearchEngineInputStreamImpl
 							continue;
 						}
 
+						MethodImpl method = new MethodImpl();
 						while (xmlsr.hasNext()) {
 							eventType = xmlsr.next();
 
