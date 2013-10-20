@@ -14,7 +14,7 @@ public class Main {
 		}
 
 		// input source
-		InputSource source = new InputSource(args[0]);
+		InputSource data = new InputSource(args[0]);
 	}
 
 }
