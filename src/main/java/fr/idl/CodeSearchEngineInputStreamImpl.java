@@ -9,8 +9,9 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.events.XMLEvent;
 
-public class CodeSearchEngineInputStreamImpl implements
-		CodeSearchEngineInputStream {
+public class CodeSearchEngineInputStreamImpl
+		implements
+			CodeSearchEngineInputStream {
 
 	@Override
 	public Type findType(String typeName, InputStream data) {
@@ -97,10 +98,39 @@ public class CodeSearchEngineInputStreamImpl implements
 		return listMethod;
 	}
 
+	/**
+	 * @author Julien Duribreux
+	 */
 	@Override
 	public List<Method> findMethodsReturning(String typeName, InputStream data) {
-		// TODO Auto-generated method stub
-		return null;
+		List<Method> listMethod = new ArrayList<Method>();
+
+		XMLInputFactory xmlif = XMLInputFactory.newInstance();
+		try {
+			XMLStreamReader xmlsr = xmlif.createXMLStreamReader(data);
+			System.out.println("prout");
+			while (xmlsr.hasNext()) {
+				int eventType = xmlsr.next();
+				switch (eventType) {
+					case XMLEvent.START_ELEMENT :
+						System.out.println(xmlsr.getName());
+						break;
+					case XMLEvent.CHARACTERS :
+						String chaine = xmlsr.getText();
+						if (!xmlsr.isWhiteSpace()) {
+							System.out.println("\t->\"" + chaine + "\"");
+						}
+						break;
+					default :
+						break;
+				}
+			}
+
+		} catch (XMLStreamException e) {
+			throw new RuntimeException(e);
+		}
+
+		return listMethod;
 	}
 
 	@Override

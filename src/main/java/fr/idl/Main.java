@@ -1,8 +1,10 @@
 package main.java.fr.idl;
 
-import javax.xml.xpath.XPathExpressionException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 
-import org.xml.sax.InputSource;
+import javax.xml.xpath.XPathExpressionException;
 
 public class Main {
 
@@ -13,8 +15,30 @@ public class Main {
 			System.exit(-1);
 		}
 
-		// input source
-		InputSource data = new InputSource(args[0]);
+		File file = new File(args[0]);
+		FileInputStream fis = null;
+
+		try {
+			fis = new FileInputStream(file);
+
+			System.out.println("Total file size to read (in bytes) : "
+					+ fis.available());
+
+			CodeSearchEngineInputStreamImpl oneShot = new CodeSearchEngineInputStreamImpl();
+
+			// Call your method
+			// oneShot.findMethodsReturning("yeah", fis);
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (fis != null)
+					fis.close();
+			} catch (IOException ex) {
+				ex.printStackTrace();
+			}
+		}
 	}
 
 }
