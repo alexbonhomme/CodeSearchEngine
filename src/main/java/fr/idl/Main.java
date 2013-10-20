@@ -27,7 +27,7 @@ public class Main {
 			CodeSearchEngineInputStreamImpl oneShot = new CodeSearchEngineInputStreamImpl();
 
 			// Call your method
-			oneShot.findMethodsReturning("yeah", fis);
+			oneShot.findMethodsReturning("void", fis);
 
 		} catch (IOException e) {
 			e.printStackTrace();

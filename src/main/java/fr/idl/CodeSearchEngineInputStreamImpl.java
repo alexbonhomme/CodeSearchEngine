@@ -59,36 +59,36 @@ public class CodeSearchEngineInputStreamImpl
 				eventType = xmlsr.next();
 
 				switch (eventType) {
-				case XMLEvent.START_ELEMENT:
-					if (!xmlsr.getName().equals(typeName)) {
-						continue;
-					}
-
-					// TODO faire une methode pour ça
-					while (xmlsr.hasNext()) {
-						eventType = xmlsr.next();
-
-						if (eventType != XMLEvent.START_ELEMENT) {
+					case XMLEvent.START_ELEMENT :
+						if (!xmlsr.getName().equals(typeName)) {
 							continue;
 						}
 
-						if (!xmlsr.getName().equals("function")) {
-							continue;
-						}
-
-						MethodImpl method = new MethodImpl();
+						// TODO faire une methode pour ça
 						while (xmlsr.hasNext()) {
 							eventType = xmlsr.next();
 
 							if (eventType != XMLEvent.START_ELEMENT) {
 								continue;
 							}
-						}
-					}
 
-					break;
-				default:
-					break;
+							if (!xmlsr.getName().equals("function")) {
+								continue;
+							}
+
+							MethodImpl method = new MethodImpl();
+							while (xmlsr.hasNext()) {
+								eventType = xmlsr.next();
+
+								if (eventType != XMLEvent.START_ELEMENT) {
+									continue;
+								}
+							}
+						}
+
+						break;
+					default :
+						break;
 				}
 			}
 
@@ -105,21 +105,55 @@ public class CodeSearchEngineInputStreamImpl
 	@Override
 	public List<Method> findMethodsReturning(String typeName, InputStream data) {
 		List<Method> listMethod = new ArrayList<Method>();
+		boolean inMethod = false;
+		boolean inType = false;
+		boolean inParameter = false;
+		boolean inBlock = false;
+		String methodName = "";
+		String outputType = "";
 
 		XMLInputFactory xmlif = XMLInputFactory.newInstance();
 		try {
 			XMLStreamReader xmlsr = xmlif.createXMLStreamReader(data);
-			System.out.println("prout");
 			while (xmlsr.hasNext()) {
 				int eventType = xmlsr.next();
+				// Search function beacon
 				switch (eventType) {
 					case XMLEvent.START_ELEMENT :
-						System.out.println(xmlsr.getLocalName());
+						if (xmlsr.getLocalName().equals("function")) {
+							inMethod = true;
+						} else if (xmlsr.getLocalName().equals("type")) {
+							inType = true;
+						} else if (xmlsr.getLocalName()
+								.equals("parameter_list")) {
+							inParameter = true;
+						} else if (xmlsr.getLocalName().equals("block")) {
+							inBlock = true;
+						}
 						break;
 					case XMLEvent.CHARACTERS :
-						String chaine = xmlsr.getText();
-						if (!xmlsr.isWhiteSpace()) {
-							// System.out.println(chaine);
+						if (inMethod && inType && !inParameter && !inBlock) {
+							methodName = xmlsr.getText();
+							System.out.println("Methode : " + methodName);
+						}
+						if (inType) {
+							outputType = xmlsr.getText();
+							System.out.println("OuputType : " + outputType);
+						}
+						break;
+					case XMLEvent.END_ELEMENT :
+						if (xmlsr.getLocalName().equals("function")) {
+							// Reset
+							inMethod = false;
+							methodName = "";
+							outputType = "";
+						} else if (xmlsr.getLocalName().equals("type")) {
+							inType = false;
+						} else if (xmlsr.getLocalName()
+								.equals("parameter_list")) {
+							inParameter = false;
+						} else if (xmlsr.getLocalName().equals("block")) {
+							inBlock = false;
 						}
 						break;
 					default :
@@ -133,7 +167,6 @@ public class CodeSearchEngineInputStreamImpl
 
 		return listMethod;
 	}
-
 	@Override
 	public List<Method> findMethodsTakingAsParameter(String typeName,
 			InputStream data) {
