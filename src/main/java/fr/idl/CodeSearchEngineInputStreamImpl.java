@@ -105,56 +105,47 @@ public class CodeSearchEngineInputStreamImpl
 	@Override
 	public List<Method> findMethodsReturning(String typeName, InputStream data) {
 		List<Method> listMethod = new ArrayList<Method>();
-		boolean inMethod = false;
-		boolean inType = false;
-		boolean inParameter = false;
-		boolean inBlock = false;
-		String methodName = "";
-		String outputType = "";
+
+		boolean function = false;
+		boolean type = false;
+		boolean name = false;
+		boolean typeOK = false;
 
 		XMLInputFactory xmlif = XMLInputFactory.newInstance();
 		try {
 			XMLStreamReader xmlsr = xmlif.createXMLStreamReader(data);
 			while (xmlsr.hasNext()) {
 				int eventType = xmlsr.next();
-				// Search function beacon
+				// Analyze each beacon
 				switch (eventType) {
 					case XMLEvent.START_ELEMENT :
-						if (xmlsr.getLocalName().equals("function")) {
-							inMethod = true;
-						} else if (xmlsr.getLocalName().equals("type")) {
-							inType = true;
-						} else if (xmlsr.getLocalName()
-								.equals("parameter_list")) {
-							inParameter = true;
-						} else if (xmlsr.getLocalName().equals("block")) {
-							inBlock = true;
-						}
+						// Trace where we are
+						if (xmlsr.getLocalName().equals("function"))
+							function = !function;
+						if (xmlsr.getLocalName().equals("type"))
+							type = !type;
+						if (xmlsr.getLocalName().equals("name"))
+							name = !name;
 						break;
 					case XMLEvent.CHARACTERS :
-						if (inMethod && inType && !inParameter && !inBlock) {
-							methodName = xmlsr.getText();
-							System.out.println("Methode : " + methodName);
-						}
-						if (inType) {
-							outputType = xmlsr.getText();
-							System.out.println("OuputType : " + outputType);
+						// Extract the return type
+						if (function && type && name && !typeOK) {
+							System.out.println("Return type : "
+									+ xmlsr.getText());
+							System.out.println();
+							typeOK = !typeOK;
 						}
 						break;
 					case XMLEvent.END_ELEMENT :
+						// Trace where we are
 						if (xmlsr.getLocalName().equals("function")) {
-							// Reset
-							inMethod = false;
-							methodName = "";
-							outputType = "";
-						} else if (xmlsr.getLocalName().equals("type")) {
-							inType = false;
-						} else if (xmlsr.getLocalName()
-								.equals("parameter_list")) {
-							inParameter = false;
-						} else if (xmlsr.getLocalName().equals("block")) {
-							inBlock = false;
+							function = !function;
+							typeOK = !typeOK; // ready for an other function
 						}
+						if (xmlsr.getLocalName().equals("type"))
+							type = !type;
+						if (xmlsr.getLocalName().equals("name"))
+							name = !name;
 						break;
 					default :
 						break;
