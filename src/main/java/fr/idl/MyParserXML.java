@@ -1,4 +1,4 @@
-package fr.myParser;
+package main.java.fr.idl;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
