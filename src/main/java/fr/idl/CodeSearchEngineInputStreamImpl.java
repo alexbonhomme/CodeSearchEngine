@@ -83,12 +83,12 @@ public class CodeSearchEngineInputStreamImpl
 				int eventType = xmlsr.next();
 				switch (eventType) {
 					case XMLEvent.START_ELEMENT :
-						System.out.println(xmlsr.getName());
+						System.out.println(xmlsr.getLocalName());
 						break;
 					case XMLEvent.CHARACTERS :
 						String chaine = xmlsr.getText();
 						if (!xmlsr.isWhiteSpace()) {
-							System.out.println("\t->\"" + chaine + "\"");
+							// System.out.println(chaine);
 						}
 						break;
 					default :
