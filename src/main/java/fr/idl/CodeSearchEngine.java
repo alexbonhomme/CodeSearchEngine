@@ -47,7 +47,7 @@ public interface CodeSearchEngine<T> {
   }
 
   /** returns the type (and its location through getLocation) of class className */
-  Type findType(String className, T data);
+  Type findType(String className, T data);	
   
   /** returns all subclasses of class className */
   List<Type> findSubTypesOf(String className, T data);

@@ -1,4 +1,4 @@
-package main.java.fr.idl;
+package fr.myParser;
 
 import java.util.Calendar;
 
@@ -14,7 +14,7 @@ public class App
 		try {
 			XMLReader saxReader = XMLReaderFactory.createXMLReader();
 			saxReader.setContentHandler(m);
-		//	saxReader.parse("/Users/Tony/Documents/workspace/CodeSearchEngine/xml/petit.xml");
+//			saxReader.parse("/Users/Tony/Documents/srcML/petit.xml");
 			saxReader.parse("/Users/Tony/Documents/workspace/CodeSearchEngine/xml/java.xml");
 //			saxReader.parse("/Users/Tony/Documents/srcML/testannotation.xml");
 //			saxReader.parse("/Users/Tony/Documents/srcML/testEnum.xml");
