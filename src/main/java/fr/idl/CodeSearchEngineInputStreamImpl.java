@@ -54,40 +54,124 @@ public class CodeSearchEngineInputStreamImpl implements
 			XMLStreamReader xmlsr = xmlif.createXMLStreamReader(data);
 
 			int eventType;
+			boolean classFound = false;
+
+			// looking for class
 			while (xmlsr.hasNext()) {
 				eventType = xmlsr.next();
 
+				if (eventType != XMLEvent.START_ELEMENT) {
+					continue;
+				}
+
+				if (!xmlsr.getLocalName().equals("class")) {
+					continue;
+				}
+
+				// looking for class.name
+				while (xmlsr.hasNext()) {
+					eventType = xmlsr.next();
+
+					if (eventType == XMLEvent.START_ELEMENT
+							&& xmlsr.getLocalName().equals("name")) {
+						break;
+					}
+				}
+
+				classFound = false;
+				eventType = xmlsr.next();
 				switch (eventType) {
+				case XMLEvent.CHARACTERS:
+					if (xmlsr.getText().equals(typeName)) {
+						classFound = true; // class.name match
+					}
+					break;
+
+				// looking for class.name.name
 				case XMLEvent.START_ELEMENT:
-					if (!xmlsr.getName().equals(typeName)) {
-						continue;
+					if (xmlsr.getLocalName().equals("name")) {
+						eventType = xmlsr.next();
+						if (eventType == XMLEvent.CHARACTERS) {
+							if (xmlsr.getText().equals(typeName)) {
+								classFound = true;// class.name.name match
+							}
+						}
 					}
 
-					// TODO faire une methode pour ça
+				default:
+					break;
+				}
+
+				// Class found
+				if (classFound) {
+
+					// DEBUG
+					// System.out.println("Class match - Line : "
+					// + xmlsr.getLocation().getLineNumber());
+
+					// looking for methods
 					while (xmlsr.hasNext()) {
 						eventType = xmlsr.next();
+
+						// class ending
+						if (eventType == XMLEvent.END_ELEMENT
+								&& xmlsr.getLocalName().equals("class")) {
+							break;
+						}
 
 						if (eventType != XMLEvent.START_ELEMENT) {
 							continue;
 						}
 
-						if (!xmlsr.getName().equals("function")) {
+						// function -> class
+						// function_decl -> interface
+						if (!xmlsr.getLocalName().equals("function")
+								&& !xmlsr.getLocalName()
+										.equals("function_decl")) {
 							continue;
 						}
 
+						// DEBUG
+						// System.out.println("Method match - Line : "
+						// + xmlsr.getLocation().getLineNumber());
+
+						// method found
 						MethodImpl method = new MethodImpl();
 						while (xmlsr.hasNext()) {
 							eventType = xmlsr.next();
 
-							if (eventType != XMLEvent.START_ELEMENT) {
-								continue;
+							// XXX implémnter le type
+							// ending type (starting name)
+							if (eventType == XMLEvent.END_ELEMENT
+									&& xmlsr.getLocalName().equals("type")) {
+								// DEBUG
+								// System.out.println("</type> match - Line : "
+								// + xmlsr.getLocation().getLineNumber());
+
+								break;
 							}
 						}
-					}
 
-					break;
-				default:
-					break;
+						// skip spaces
+						while (xmlsr.hasNext()
+								&& eventType != XMLEvent.START_ELEMENT) {
+							eventType = xmlsr.next();
+						}
+
+						if (!xmlsr.getLocalName().equals("name")) {
+							// TODO throw custom exception
+							throw new RuntimeException(
+									"Malformed file. '<name>' was expected.");
+						}
+
+						// name found
+						eventType = xmlsr.next();
+						if (eventType == XMLEvent.CHARACTERS) {
+							method.setName(xmlsr.getText());
+						}
+
+						listMethod.add(method);
+					}
 				}
 			}
 
