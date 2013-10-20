@@ -32,15 +32,13 @@ public class CodeSearchEngineInputStreamImpl
 	}
 
 	@Override
-	public List<Location> findAllReadAccessesOf(CodeSearchEngine.Field field,
-			InputStream data) {
+	public List<Location> findAllReadAccessesOf(Field field, InputStream data) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public List<Location> findAllWriteAccessesOf(CodeSearchEngine.Field field,
-			InputStream data) {
+	public List<Location> findAllWriteAccessesOf(Field field, InputStream data) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -56,9 +54,41 @@ public class CodeSearchEngineInputStreamImpl
 		try {
 			XMLStreamReader xmlsr = xmlif.createXMLStreamReader(data);
 
+			int eventType;
 			while (xmlsr.hasNext()) {
-				int eventType = xmlsr.next();
+				eventType = xmlsr.next();
 
+				switch (eventType) {
+				case XMLEvent.START_ELEMENT:
+					if (!xmlsr.getName().equals(typeName)) {
+						continue;
+					}
+
+					// TODO faire une methode pour ça
+					while (xmlsr.hasNext()) {
+						eventType = xmlsr.next();
+
+						if (eventType != XMLEvent.START_ELEMENT) {
+							continue;
+						}
+
+						if (!xmlsr.getName().equals("function")) {
+							continue;
+						}
+
+						while (xmlsr.hasNext()) {
+							eventType = xmlsr.next();
+
+							if (eventType != XMLEvent.START_ELEMENT) {
+								continue;
+							}
+						}
+					}
+
+					break;
+				default:
+					break;
+				}
 			}
 
 		} catch (XMLStreamException e) {
