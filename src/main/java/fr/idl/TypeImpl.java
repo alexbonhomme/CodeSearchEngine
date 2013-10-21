@@ -47,6 +47,7 @@ public class TypeImpl implements Type {
 	
 	public String toString() {
 		return "Location\t" + this.getDeclaration().getFilePath() + "\n"
+				+ "Kind\t\tNot implemented\n"
 				+ "Package\t\t" + this.getFullyQualifiedPackageName() + "\n"
 				+ "Return\t\t" + this.getName() + "\n" ;
 	}

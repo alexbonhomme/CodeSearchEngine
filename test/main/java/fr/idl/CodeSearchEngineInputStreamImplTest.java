@@ -24,8 +24,7 @@ public class CodeSearchEngineInputStreamImplTest {
 	public void testSetup() throws FileNotFoundException {
 		// TODO mettre un lien relatif
 		data = new FileInputStream(
-				new File(
-						"/home/alex/Documents/Cours/M2/IDL/CodeSearchEngine/xml/commons-collections.xml"));
+				new File("xml/commons-collections.xml"));
 
 		cse = new CodeSearchEngineInputStreamImpl();
 	}
@@ -62,6 +61,14 @@ public class CodeSearchEngineInputStreamImplTest {
 		assertEquals("search", methods.get(5).getName());
 		assertEquals("get", methods.get(6).getName());
 		assertEquals("remove", methods.get(7).getName());
+	}
+	
+	@Test
+	public void testFindMethodsReturning() {
+		List<Method> methods = cse.findMethodsReturning("int", data);
+		assertEquals("search", methods.get(0).getName());
+		assertEquals("int", methods.get(0).getType().getName());
+		assertEquals("org.apache.commons.collections", methods.get(0).getType().getFullyQualifiedPackageName());
 	}
 
 }
