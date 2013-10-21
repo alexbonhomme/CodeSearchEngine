@@ -2,6 +2,7 @@ package main.java.fr.idl;
 
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import javax.xml.stream.XMLInputFactory;
@@ -9,8 +10,8 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.events.XMLEvent;
 
+import main.java.fr.idl.CodeSearchEngine.Type;
 
-import main.java.fr.idl.CodeSearchEngine.TypeKind;
 import org.apache.log4j.Logger;
 
 
@@ -132,7 +133,22 @@ public class CodeSearchEngineInputStreamImpl implements
 	@Override
 	public List<Type> findSubTypesOf(String typeName, InputStream data) {
 		List<Type> listType = new ArrayList<Type>();
-
+		
+		boolean inExtends = false;
+		boolean inExtendsName = false;
+		String extendsValue = "";
+		
+		boolean inClass = false;
+		boolean inClassName = false;
+		String classValue = "";
+		
+		boolean inUnit = false;
+		String pathValue = "";
+		
+		boolean inPackage = false;
+		boolean inPackageName = false;
+		String packageValue = "";
+		
 		XMLInputFactory xmlif = XMLInputFactory.newInstance();
 		try {
 			XMLStreamReader xmlsr = xmlif.createXMLStreamReader(data);
@@ -140,17 +156,73 @@ public class CodeSearchEngineInputStreamImpl implements
 				int eventType = xmlsr.next();
 				// Analyze each beacon
 				switch (eventType) {
-					case XMLEvent.START_ELEMENT:
-						break;
-					case XMLEvent.CHARACTERS:
-						break;
-					case XMLEvent.END_ELEMENT:
-						break;
-					default:
-						break;
+				case XMLEvent.START_ELEMENT:
+					if (xmlsr.getLocalName().equals("unit")) {
+						pathValue = xmlsr.getAttributeValue(1);
+						inUnit = !inUnit;
+					} else if (xmlsr.getLocalName().equals("class")) {
+						extendsValue = ""; // reset
+						classValue = "";
+						inClass = !inClass;
+					} else if (xmlsr.getLocalName().equals("extends"))
+						inExtends = !inExtends;
+					else if (xmlsr.getLocalName().equals("name") && inExtends)
+						inExtendsName = !inExtendsName;
+					else if (xmlsr.getLocalName().equals("name") && inClass)
+						inClassName = !inClassName;
+					else if (xmlsr.getLocalName().equals("package")) {
+						inPackage = !inPackage;
+						packageValue = ""; // Reset
+					}
+					if (inPackage && xmlsr.getLocalName().equals("name"))
+						inPackageName = !inPackageName;
+					break;
+				case XMLEvent.CHARACTERS:
+					if (inExtendsName) {
+						extendsValue = xmlsr.getText();
+					}
+					
+					if (inClassName && classValue.equals("")) {
+						classValue = xmlsr.getText();
+					}
+					
+					// Extract package
+					if (inPackageName) {
+						if (packageValue.equals(""))
+							packageValue += xmlsr.getText();
+						else
+							packageValue += "." + xmlsr.getText();
+					}
+					
+					break;
+				case XMLEvent.END_ELEMENT:
+					if (xmlsr.getLocalName().equals("unit")) {
+						inUnit = !inUnit;
+					} else if (xmlsr.getLocalName().equals("class")) {
+						inClass = !inClass;
+					} else if (xmlsr.getLocalName().equals("extends")) {
+						inExtends = !inExtends;
+						// Got all the informations we need
+						if (extendsValue.equals(typeName)) {
+							// Get Location
+							Location locationValue = new LocationImpl(pathValue);
+							// Create Method
+							TypeImpl type = new TypeImpl(classValue, packageValue, TypeKind.CLASS, locationValue);
+							listType.add(type);
+						}
+					} else if (xmlsr.getLocalName().equals("name") && inExtends)
+						inExtendsName = !inExtendsName;
+					else if (xmlsr.getLocalName().equals("name") && inClass)
+						inClassName = !inClassName;
+					else if (xmlsr.getLocalName().equals("package"))
+						inPackage = !inPackage;
+					if (inPackage && xmlsr.getLocalName().equals("name"))
+						inPackageName = !inPackageName;
+					break;
+				default:
+					break;
 				}
 			}
-
 		} catch (XMLStreamException e) {
 			throw new RuntimeException(e);
 		}
