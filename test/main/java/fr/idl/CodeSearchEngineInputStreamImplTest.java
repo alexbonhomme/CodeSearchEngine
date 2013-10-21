@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
+import main.java.fr.idl.CodeSearchEngine.Field;
 import main.java.fr.idl.CodeSearchEngine.Method;
 import main.java.fr.idl.CodeSearchEngine.Type;
 import main.java.fr.idl.CodeSearchEngine.TypeKind;
@@ -102,6 +103,15 @@ public class CodeSearchEngineInputStreamImplTest {
     assertEquals("int", methods.get(0).getType().getName());
     assertEquals("org.apache.commons.collections", methods.get(0).getType()
         .getFullyQualifiedPackageName());
+  }
+  
+  @Test
+  public void testfindFieldsTypedWith(){
+	  List<Field> list = cse.findFieldsTypedWith("TreeBidiMap", data);
+	  assertEquals(8,list.size());
+	  assertEquals(" private String description", list.get(0).getName());
+	  assertEquals(" private Node K V [] rootNode", list.get(1).getName());
+	  assertEquals(" private int nodeCount", list.get(2).getName());
   }
 
 }

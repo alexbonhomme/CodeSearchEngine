@@ -163,8 +163,121 @@ public class CodeSearchEngineInputStreamImpl implements
 
 	@Override
 	public List<Field> findFieldsTypedWith(String typeName, InputStream data) {
-		// TODO Auto-generated method stub
-		return null;
+		XMLInputFactory xmlif = XMLInputFactory.newInstance();
+		XMLStreamReader xmlsr;
+		
+		boolean in_class = false;
+		boolean in_class_name = false;
+		boolean have_name_class = false;
+		boolean in_good_class = false;
+		boolean in_class_decl_stmt = false;
+		boolean exit = false;
+		boolean in_class_constructor = false;
+		boolean in_class_function = false;
+		boolean in_class_decl_stmt_type_name = false;
+		boolean in_class_decl_stmt_name = false;
+		boolean in_class_decl_stmt_init = false;
+		
+		List<Field> listfield = new ArrayList<Field>();
+		String tmp_field = "";
+		
+		try {
+			xmlsr = xmlif.createXMLStreamReader(data);
+			int eventType;
+			while (xmlsr.hasNext() && (exit == false)) {
+				eventType = xmlsr.next();
+				switch (eventType) {
+					case XMLEvent.START_ELEMENT:
+						if(xmlsr.getLocalName().equals("class")){
+							in_class = true;
+						}
+						if(in_class && xmlsr.getLocalName().equals("name") && !have_name_class){
+							in_class_name = true;
+						}
+						
+						if(in_good_class && xmlsr.getLocalName().equals("constructor")){
+							in_class_constructor = true;
+						}
+
+						if(in_good_class && xmlsr.getLocalName().equals("function")){
+							in_class_function= true;
+						}
+						
+						if(in_good_class && xmlsr.getLocalName().equals("decl_stmt")){
+							if(!in_class_constructor && !in_class_function){
+								in_class_decl_stmt = true;
+							}
+						}
+						
+						if(in_good_class && in_class_decl_stmt && xmlsr.getLocalName().equals("type")){
+							in_class_decl_stmt_type_name = true;
+						}
+						
+						if(in_good_class && in_class_decl_stmt && xmlsr.getLocalName().equals("init")){
+							in_class_decl_stmt_init = true;
+						}
+						
+						if(in_good_class && in_class_decl_stmt && xmlsr.getLocalName().equals("name") && !in_class_decl_stmt_init){
+							in_class_decl_stmt_name = true;
+						}
+						
+						if(in_good_class && in_class_decl_stmt && xmlsr.getLocalName().equals("index") && !in_class_decl_stmt_init){
+							in_class_decl_stmt_name = true;
+						}
+						
+					break;
+					case XMLEvent.CHARACTERS:
+						if(in_class && in_class_name){
+							String text = xmlsr.getText() ;
+							if(text.equals(typeName)){
+								in_good_class = true;
+							}
+							have_name_class = true;
+							in_class_name = false;
+						}
+						if(in_class_decl_stmt_type_name){
+							tmp_field += " "  + xmlsr.getText();
+							in_class_decl_stmt_type_name = false;
+						}
+						if(in_class_decl_stmt_name){
+							tmp_field += " "  + xmlsr.getText();
+							in_class_decl_stmt_name = false;
+						}
+					break;
+					case XMLEvent.END_ELEMENT:
+						if(xmlsr.getLocalName().equals("class")){
+							in_class = false;
+							have_name_class = false;
+							in_class_name = false;
+							exit = in_good_class;
+						}
+						if(xmlsr.getLocalName().equals("constructor")){
+							in_class_constructor = false;
+						}
+						if(xmlsr.getLocalName().equals("function")){
+							in_class_function = false;
+						}
+						if(xmlsr.getLocalName().equals("decl_stmt") && in_good_class){
+							if(!tmp_field.isEmpty()){
+								Field f = new FieldImpl(tmp_field,null);
+								listfield.add(f);
+								tmp_field = "" ;
+								in_class_decl_stmt = false;
+							}
+						}
+						if(xmlsr.getLocalName().equals("init")){
+							in_class_decl_stmt_init = false;
+						}
+					break;
+					
+				}
+			}
+			
+		} catch (XMLStreamException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return listfield;
 	}
 
 	@Override
