@@ -724,6 +724,9 @@ public class CodeSearchEngineInputStreamImpl implements
 		return null;
 	}
 
+	/**
+	 * @author Alexandre Bonhomme
+	 */
 	@Override
 	public List<Method> findMethodsCalled(String methodName, InputStream data) {
 		ArrayList<Method> listMethods = new ArrayList<>();

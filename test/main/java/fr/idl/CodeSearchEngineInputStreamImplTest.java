@@ -65,7 +65,11 @@ public class CodeSearchEngineInputStreamImplTest {
 
 	@Test
 	public void testFindFieldsTypedWith() {
-		fail("Not yet implemented");
+		List<Field> list = cse.findFieldsTypedWith("TreeBidiMap", data);
+		assertEquals(8, list.size());
+		assertEquals(" private String description", list.get(0).getName());
+		assertEquals(" private Node K V [] rootNode", list.get(1).getName());
+		assertEquals(" private int nodeCount", list.get(2).getName());
 	}
 
 	@Test
