@@ -354,12 +354,7 @@ public class CodeSearchEngineInputStreamImpl implements
 
 				// Class found
 				if (classFound) {
-
 					SAXBuilder builder = new SAXBuilder();
-
-					// DEBUG
-					// System.out.println("Class match - Line : "
-					// + xmlsr.getLocation().getLineNumber());
 
 					// looking for methods
 					while (xmlsr.hasNext()) {
@@ -377,9 +372,8 @@ public class CodeSearchEngineInputStreamImpl implements
 
 						// function -> class
 						// function_decl -> interface
-						if (!xmlsr.getLocalName().equals("function")
-								&& !xmlsr.getLocalName()
-										.equals("function_decl")) {
+						if (!xmlsr.getLocalName().matches(
+								"^function[_A-Za-z]*$")) {
 							continue;
 						}
 
@@ -413,20 +407,8 @@ public class CodeSearchEngineInputStreamImpl implements
 								break;
 
 							case XMLEvent.CHARACTERS:
-								String text = xmlsr.getText();
-								switch (text) {
-								case "<":
-									builderDOMStructure += "&lt;";
-									break;
-								case ">":
-									builderDOMStructure += "&gt;";
-									break;
-
-								default:
-									builderDOMStructure += text;
-									break;
-								}
-
+								builderDOMStructure += Util
+										.escapeSpecialsCaract(xmlsr.getText());
 								break;
 
 							default:
@@ -626,11 +608,37 @@ public class CodeSearchEngineInputStreamImpl implements
 		return null;
 	}
 
+	/**
+	 * @author Alexandre Bonhomme
+	 */
 	@Override
-	public List<Method> findOverridingMethodsOf(CodeSearchEngine.Method method,
-			InputStream data) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<Method> findOverridingMethodsOf(Method method, InputStream data) {
+		ArrayList<Method> listMethod = new ArrayList<>();
+
+		XMLInputFactory xmlif = XMLInputFactory.newInstance();
+		try {
+			XMLStreamReader xmlsr = xmlif.createXMLStreamReader(data);
+
+			int eventType;
+
+			while (xmlsr.hasNext()) {
+				eventType = xmlsr.next();
+
+				if (eventType == XMLEvent.CHARACTERS
+						&& xmlsr.getText().equals("@")) {
+					eventType = xmlsr.next();
+
+					if (eventType == XMLEvent.CHARACTERS
+							&& xmlsr.getText().equals("^function[_A-Za-z]*")) {
+						log.debug(xmlsr.getLocation());
+					}
+				}
+			}
+		} catch (XMLStreamException e) {
+			throw new RuntimeException(e);
+		}
+
+		return listMethod;
 	}
 
 	@Override
