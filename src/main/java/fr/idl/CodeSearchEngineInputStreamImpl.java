@@ -131,8 +131,30 @@ public class CodeSearchEngineInputStreamImpl implements
 	 */
 	@Override
 	public List<Type> findSubTypesOf(String typeName, InputStream data) {
-		// TODO Auto-generated method stub
-		return null;
+		List<Type> listType = new ArrayList<Type>();
+
+		XMLInputFactory xmlif = XMLInputFactory.newInstance();
+		try {
+			XMLStreamReader xmlsr = xmlif.createXMLStreamReader(data);
+			while (xmlsr.hasNext()) {
+				int eventType = xmlsr.next();
+				// Analyze each beacon
+				switch (eventType) {
+					case XMLEvent.START_ELEMENT:
+						break;
+					case XMLEvent.CHARACTERS:
+						break;
+					case XMLEvent.END_ELEMENT:
+						break;
+					default:
+						break;
+				}
+			}
+
+		} catch (XMLStreamException e) {
+			throw new RuntimeException(e);
+		}
+		return listType;
 	}
 
 	@Override
@@ -296,8 +318,7 @@ public class CodeSearchEngineInputStreamImpl implements
 	}
 
 	/**
-	 * @author Julien Duribreux Note : Petit soucis avec certains types
-	 *         abstraits, close enough
+	 * @author Julien Duribreux 
 	 */
 	@Override
 	public List<Method> findMethodsReturning(String typeName, InputStream data) {

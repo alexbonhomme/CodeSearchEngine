@@ -8,6 +8,7 @@ import java.util.List;
 import javax.xml.xpath.XPathExpressionException;
 
 import main.java.fr.idl.CodeSearchEngine.Method;
+import main.java.fr.idl.CodeSearchEngine.Type;
 
 public class Main {
 
@@ -31,12 +32,14 @@ public class Main {
 
 			// Call methods returning type + print + timer
 			double start = System.currentTimeMillis();
-			List<Method> l = oneShot.findMethodsReturning("int", fis);
+			List<Type> l = oneShot.findSubTypesOf("Exception", fis);
 			double end = System.currentTimeMillis();
-			System.out.println(l.size() + " result(s)\n-------------");
-			for (Method m : l) {
-				System.out.println(m);
+			for (Type t : l) {
+				System.out.println(t);
 			}
+			String res ;
+			if (l.size() > 1) res = " results" ; else res = " result";
+			System.out.println("-------------\n"+l.size() + res + " found.");
 			System.out.println("Time : " + (end-start) + "ms");
 			
 		} catch (IOException e) {
