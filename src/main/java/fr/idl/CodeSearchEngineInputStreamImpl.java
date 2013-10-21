@@ -1,12 +1,10 @@
 package main.java.fr.idl;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
@@ -14,6 +12,10 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.events.XMLEvent;
 
 import org.apache.log4j.Logger;
+import org.jdom2.Document;
+import org.jdom2.Element;
+import org.jdom2.JDOMException;
+import org.jdom2.input.SAXBuilder;
 
 
 public class CodeSearchEngineInputStreamImpl implements CodeSearchEngineInputStream {
@@ -132,22 +134,6 @@ public class CodeSearchEngineInputStreamImpl implements CodeSearchEngineInputStr
   @Override
   public List<Type> findSubTypesOf(String typeName, InputStream data) {
     List<Type> listType = new ArrayList<Type>();
-    HashMap<String, List<Type>> hashExceptions = new HashMap<String, List<Type>>();
-
-    boolean inExtends = false;
-    boolean inExtendsName = false;
-    String extendsValue = "";
-
-    boolean inClass = false;
-    boolean inClassName = false;
-    String classValue = "";
-
-    boolean inUnit = false;
-    String pathValue = "";
-
-    boolean inPackage = false;
-    boolean inPackageName = false;
-    String packageValue = "";
 
     XMLInputFactory xmlif = XMLInputFactory.newInstance();
     try {
@@ -157,98 +143,18 @@ public class CodeSearchEngineInputStreamImpl implements CodeSearchEngineInputStr
         // Analyze each beacon
         switch (eventType) {
           case XMLEvent.START_ELEMENT:
-            if (xmlsr.getLocalName().equals("unit")) {
-              pathValue = xmlsr.getAttributeValue(1);
-              inUnit = !inUnit;
-            } else if (xmlsr.getLocalName().equals("class")) {
-              extendsValue = ""; // reset
-              classValue = "";
-              inClass = !inClass;
-            } else if (xmlsr.getLocalName().equals("extends"))
-              inExtends = !inExtends;
-            else if (xmlsr.getLocalName().equals("name") && inExtends)
-              inExtendsName = !inExtendsName;
-            else if (xmlsr.getLocalName().equals("name") && inClass)
-              inClassName = !inClassName;
-            else if (xmlsr.getLocalName().equals("package")) {
-              inPackage = !inPackage;
-              packageValue = ""; // Reset
-            }
-            if (inPackage && xmlsr.getLocalName().equals("name")) inPackageName = !inPackageName;
             break;
           case XMLEvent.CHARACTERS:
-            if (inExtendsName) {
-              extendsValue = xmlsr.getText();
-            }
-
-            if (inClassName && classValue.equals("")) {
-              classValue = xmlsr.getText();
-            }
-
-            // Extract package
-            if (inPackageName) {
-              if (packageValue.equals(""))
-                packageValue += xmlsr.getText();
-              else
-                packageValue += "." + xmlsr.getText();
-            }
-
             break;
           case XMLEvent.END_ELEMENT:
-            if (xmlsr.getLocalName().equals("unit")) {
-              inUnit = !inUnit;
-            } else if (xmlsr.getLocalName().equals("class")) {
-              inClass = !inClass;
-            } else if (xmlsr.getLocalName().equals("extends")) {
-              inExtends = !inExtends;
-              // Get Location
-              Location locationValue = new LocationImpl(pathValue);
-              // Create Method
-              TypeImpl type = new TypeImpl(classValue, packageValue, TypeKind.CLASS, locationValue);
-
-              // Ajout hashMap
-              if (!hashExceptions.containsKey(extendsValue))
-                hashExceptions.put(extendsValue, new ArrayList<Type>());
-              hashExceptions.get(extendsValue).add(type);
-
-              // Got all the informations we need
-              if (extendsValue.equals(typeName)) {
-                listType.add(type);
-              }
-            } else if (xmlsr.getLocalName().equals("name") && inExtends)
-              inExtendsName = !inExtendsName;
-            else if (xmlsr.getLocalName().equals("name") && inClass)
-              inClassName = !inClassName;
-            else if (xmlsr.getLocalName().equals("package")) inPackage = !inPackage;
-            if (inPackage && xmlsr.getLocalName().equals("name")) inPackageName = !inPackageName;
             break;
           default:
             break;
         }
       }
+
     } catch (XMLStreamException e) {
       throw new RuntimeException(e);
-    }
-
-    // Analyze if there is some level of Exception
-    Queue<Type> tampon = new LinkedList<Type>();
-    Iterator it = hashExceptions.keySet().iterator();
-    while (it.hasNext()) {
-      String cle = (String) it.next();
-      List<Type> valeur = hashExceptions.get(cle);
-      tampon.addAll(valeur);
-    }
-    int round = tampon.size();
-    while (tampon.size() != 0 && (round != tampon.size())) {
-
-      for (Type t : listType) {
-        if (hashExceptions.containsKey(t)) {
-          listType.add(t);
-          for (Type t2 : hashExceptions.get(t)) {
-            tampon.add(t2);
-          }
-        }
-      }
     }
     return listType;
   }
@@ -270,6 +176,7 @@ public class CodeSearchEngineInputStreamImpl implements CodeSearchEngineInputStr
     // TODO Auto-generated method stub
     return null;
   }
+
 
   /**
    * @author Alexandre Bonhomme
@@ -333,6 +240,8 @@ public class CodeSearchEngineInputStreamImpl implements CodeSearchEngineInputStr
         // Class found
         if (classFound) {
 
+          SAXBuilder builder = new SAXBuilder();
+
           // DEBUG
           // System.out.println("Class match - Line : "
           // + xmlsr.getLocation().getLineNumber());
@@ -352,8 +261,7 @@ public class CodeSearchEngineInputStreamImpl implements CodeSearchEngineInputStr
 
             // function -> class
             // function_decl -> interface
-            if (!xmlsr.getLocalName().equals("function")
-                && !xmlsr.getLocalName().equals("function_decl")) {
+            if (!xmlsr.getLocalName().matches("^function[_A-Za-z]*$")) {
               continue;
             }
 
@@ -363,54 +271,86 @@ public class CodeSearchEngineInputStreamImpl implements CodeSearchEngineInputStr
             // method found (function)
             MethodImpl method = new MethodImpl();
 
-            // looking for function.type
-            if ((eventType = xmlsr.next()) != XMLEvent.START_ELEMENT) {
-              // TODO throw custom exception
-              throw new RuntimeException("Malformed file. '<type>' was expected.");
-            }
-
-            // type found
-            TypeImpl type = new TypeImpl("", "", null, null);
-
-            // looking for function.type.name
+            // Build a DOM string
+            String builderDOMStructure = "<root>";
             while (xmlsr.hasNext()) {
               eventType = xmlsr.next();
 
-              if (eventType == XMLEvent.START_ELEMENT && xmlsr.getLocalName().equals("name")) {
+              if (eventType == XMLEvent.END_ELEMENT
+                  && xmlsr.getLocalName().matches("^function[_A-Za-z]*$")) {
+                break;
+              }
+
+              // build ur DOM string
+              switch (eventType) {
+                case XMLEvent.START_ELEMENT:
+                  builderDOMStructure += "<" + xmlsr.getLocalName() + ">";
+                  break;
+                case XMLEvent.END_ELEMENT:
+                  builderDOMStructure += "</" + xmlsr.getLocalName() + ">";
+                  break;
+
+                case XMLEvent.CHARACTERS:
+                  String text = xmlsr.getText();
+                  switch (text) {
+                    case "<":
+                      builderDOMStructure += "&lt;";
+                      break;
+                    case ">":
+                      builderDOMStructure += "&gt;";
+                      break;
+
+                    default:
+                      builderDOMStructure += text;
+                      break;
+                  }
+
+                  break;
+
+                default:
+
+                  break;
+              }
+
+              if (eventType == XMLEvent.END_ELEMENT
+                  && xmlsr.getLocalName().equals("parameter_list")) {
                 break;
               }
             }
 
-            String typeNameBuilder = "";
-            while (xmlsr.hasNext()) {
-              eventType = xmlsr.next();
+            builderDOMStructure += "</root>";
+            System.err.println(builderDOMStructure);
 
-              if (eventType == XMLEvent.END_ELEMENT && xmlsr.getLocalName().equals("type")) {
-                break;
+            // Build DOM Structure from string
+            InputStream inputStreamDOM = new ByteArrayInputStream(builderDOMStructure.getBytes());
+
+            try {
+              Document document = (Document) builder.build(inputStreamDOM);
+              Element rootNode = document.getRootElement();
+
+              log.debug(rootNode.toString());
+
+              // now we can build ur method object
+
+              // Type
+              TypeImpl type = new TypeImpl();
+              Element name = rootNode.getChild("type").getChild("name");
+              if (name.getChildren().size() > 0) {
+                type.setName(name.getChildText("name"));
+              } else {
+                type.setName(name.getText());
               }
-              if (eventType == XMLEvent.CHARACTERS) {
-                typeNameBuilder += xmlsr.getText();
-              }
-            }
+              method.setType(type);
 
-            // Set the return type name of the method
-            type.setName(typeNameBuilder.replace("&lt;", "<").replace("&gt;", ">").trim());
-            method.setType(type);
+              // Name
+              method.setName(rootNode.getChildText("name"));
 
-            // skip spaces
-            while (xmlsr.hasNext() && eventType != XMLEvent.START_ELEMENT) {
-              eventType = xmlsr.next();
-            }
+              // Parameters
 
-            if (!xmlsr.getLocalName().equals("name")) {
-              // TODO throw custom exception
-              throw new RuntimeException("Malformed file. '<name>' was expected.");
-            }
-
-            // name found
-            eventType = xmlsr.next();
-            if (eventType == XMLEvent.CHARACTERS) {
-              method.setName(xmlsr.getText());
+            } catch (IOException e) {
+              throw new RuntimeException(e);
+            } catch (JDOMException e) {
+              throw new RuntimeException(e);
             }
 
             listMethod.add(method);
@@ -424,6 +364,8 @@ public class CodeSearchEngineInputStreamImpl implements CodeSearchEngineInputStr
 
     return listMethod;
   }
+
+
 
   /**
    * @author Julien Duribreux

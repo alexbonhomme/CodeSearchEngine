@@ -46,8 +46,8 @@ public class CodeSearchEngineInputStreamImplTest {
     assertEquals("V", methods.get(0).getType().getName());
 
     List<CodeSearchEngine.Type> parameters = new ArrayList<CodeSearchEngine.Type>();
-    parameters.add(new TypeImpl("K", "", null, null));
-    parameters.add(new TypeImpl("V", "", null, null));
+    parameters.add(new TypeImpl("K", "", null, new LocationImpl("")));
+    parameters.add(new TypeImpl("V", "", null, new LocationImpl("")));
     assertEquals(parameters, methods.get(0).getParamaters());
 
     assertEquals("getKey", methods.get(1).getName());
