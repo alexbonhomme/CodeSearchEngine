@@ -1,6 +1,15 @@
 package main.java.fr.idl;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.events.XMLEvent;
+
+import main.java.fr.idl.CodeSearchEngine.Method;
+import main.java.fr.idl.CodeSearchEngine.Type;
 
 import org.jdom2.Element;
 
@@ -48,5 +57,78 @@ public class Util {
 		default:
 			return text;
 		}
+	}
+
+	public static String builDOMStructureString(XMLStreamReader xmlsr)
+			throws XMLStreamException {
+		int eventType;
+		String builderDOMStructure = "<root>";
+
+		while (xmlsr.hasNext()) {
+			eventType = xmlsr.next();
+
+			if (eventType == XMLEvent.END_ELEMENT
+					&& xmlsr.getLocalName().matches("^function[_A-Za-z]*$")) {
+				break;
+			}
+
+			// build ur DOM string
+			switch (eventType) {
+			case XMLEvent.START_ELEMENT:
+				builderDOMStructure += "<" + xmlsr.getLocalName() + ">";
+				break;
+			case XMLEvent.END_ELEMENT:
+				builderDOMStructure += "</" + xmlsr.getLocalName() + ">";
+				break;
+
+			case XMLEvent.CHARACTERS:
+				builderDOMStructure += Util.escapeSpecialsCaract(xmlsr
+						.getText());
+				break;
+
+			default:
+
+				break;
+			}
+
+			if (eventType == XMLEvent.END_ELEMENT
+					&& xmlsr.getLocalName().equals("parameter_list")) {
+				break;
+			}
+		}
+
+		return builderDOMStructure + "</root>";
+	}
+
+	/**
+	 * 
+	 * @param methodNode
+	 * @return
+	 */
+	public static Method buildMethodFromDOM(Element methodNode) {
+		MethodImpl method = new MethodImpl();
+
+		// Name
+		method.setName(methodNode.getChildText("name"));
+
+		// Type
+		Element methodTypeName = methodNode.getChild("type").getChild("name");
+		method.setType(new TypeImpl(Util.getFullName(methodTypeName), "", null,
+				null));
+
+		// Parameters
+		ArrayList<Type> parameters = new ArrayList<Type>();
+		for (Iterator paramIterator = methodNode.getChild("parameter_list")
+				.getChildren("param").iterator(); paramIterator.hasNext();) {
+			Element node = (Element) paramIterator.next();
+
+			Element typeNameNode = node.getChild("decl").getChild("type")
+					.getChild("name");
+			parameters.add(new TypeImpl(Util.getFullName(typeNameNode), "",
+					null, new LocationImpl("")));
+		}
+		method.setParameters(parameters);
+
+		return method;
 	}
 }

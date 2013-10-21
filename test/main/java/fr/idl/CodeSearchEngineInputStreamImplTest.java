@@ -142,7 +142,9 @@ public class CodeSearchEngineInputStreamImplTest {
 
 	@Test
 	public void testFindMethodsCalled() {
-		fail("Not yet implemented");
+		List<Method> methods = cse.findMethodsCalled("transformValue", data);
+
+		assertEquals(2, methods.size());
 	}
 
 	@Test
