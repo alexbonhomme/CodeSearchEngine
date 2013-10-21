@@ -75,8 +75,7 @@ public class CodeSearchEngineInputStreamImplTest {
 	@Test
 	public void testFindType(){
 		Type t1 = new TypeImpl("FactoryUtils","org.apache.commons.collections.",TypeKind.CLASS,new LocationImpl("dataset-src/org/apache/commons/collections/FactoryUtils.java"));
-		Type t2 = new TypeImpl("FactoryUtils","org.apache.commons.collections.",TypeKind.CLASS,new LocationImpl("dataset-src/org/apache/commons/collections/FactoryUtils.java"));
-		//Type t2 = cse.findType("FactoryUtils", data);
+		Type t2 = cse.findType("FactoryUtils", data);
 		assertEquals(t1,t2);
 	}
 
