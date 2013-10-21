@@ -126,6 +126,9 @@ public class CodeSearchEngineInputStreamImpl implements
 		}
 	}
 
+	/**
+	 * @author Julien
+	 */
 	@Override
 	public List<Type> findSubTypesOf(String typeName, InputStream data) {
 		// TODO Auto-generated method stub
@@ -327,14 +330,13 @@ public class CodeSearchEngineInputStreamImpl implements
 					if (xmlsr.getLocalName().equals("unit")) {
 						pathValue = xmlsr.getAttributeValue(1);
 						inUnit = !inUnit;
-					}
-					if (xmlsr.getLocalName().equals("function"))
+					} else if (xmlsr.getLocalName().equals("function"))
 						function = !function;
-					if (xmlsr.getLocalName().equals("type"))
+					else if (xmlsr.getLocalName().equals("type"))
 						type = !type;
-					if (xmlsr.getLocalName().equals("name"))
+					else if (xmlsr.getLocalName().equals("name"))
 						name = !name; // Method name
-					if (xmlsr.getLocalName().equals("package")) {
+					else if (xmlsr.getLocalName().equals("package")) {
 						inPackage = !inPackage;
 						packageValue = ""; // Reset
 					}
@@ -387,11 +389,11 @@ public class CodeSearchEngineInputStreamImpl implements
 					}
 					if (xmlsr.getLocalName().equals("unit"))
 						inUnit = !inUnit;
-					if (xmlsr.getLocalName().equals("type"))
+					else if (xmlsr.getLocalName().equals("type"))
 						type = !type;
-					if (xmlsr.getLocalName().equals("name"))
+					else if (xmlsr.getLocalName().equals("name"))
 						name = !name;
-					if (xmlsr.getLocalName().equals("package"))
+					else if (xmlsr.getLocalName().equals("package"))
 						inPackage = !inPackage;
 
 					if (inPackage && xmlsr.getLocalName().equals("name"))
