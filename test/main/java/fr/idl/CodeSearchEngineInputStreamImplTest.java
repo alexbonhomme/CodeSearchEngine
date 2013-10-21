@@ -23,14 +23,10 @@ public class CodeSearchEngineInputStreamImplTest {
 
 	@Before
 	public void testSetup() throws FileNotFoundException {
-<<<<<<< HEAD
+
 		// TODO mettre un lien relatif
 		data = new FileInputStream(
 				new File("xml/commons-collections.xml"));
-
-=======
-		data = new FileInputStream(new File("xml/commons-collections.xml"));
->>>>>>> e9db80fa6442d721324ede4f9b6e85797dd7daae
 		cse = new CodeSearchEngineInputStreamImpl();
 	}
 
