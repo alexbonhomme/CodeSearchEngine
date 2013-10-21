@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
+import main.java.fr.idl.CodeSearchEngine.Field;
 import main.java.fr.idl.CodeSearchEngine.Method;
 import main.java.fr.idl.CodeSearchEngine.Type;
 import main.java.fr.idl.CodeSearchEngine.TypeKind;

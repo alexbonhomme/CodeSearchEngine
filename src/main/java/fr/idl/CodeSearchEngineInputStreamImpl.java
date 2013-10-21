@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
@@ -137,6 +138,22 @@ public class CodeSearchEngineInputStreamImpl implements
 	@Override
 	public List<Type> findSubTypesOf(String typeName, InputStream data) {
 		List<Type> listType = new ArrayList<Type>();
+		HashMap<String, List<Type>> hashExceptions = new HashMap<String, List<Type>>();
+
+		boolean inExtends = false;
+		boolean inExtendsName = false;
+		String extendsValue = "";
+
+		boolean inClass = false;
+		boolean inClassName = false;
+		String classValue = "";
+
+		boolean inUnit = false;
+		String pathValue = "";
+
+		boolean inPackage = false;
+		boolean inPackageName = false;
+		String packageValue = "";
 
 		XMLInputFactory xmlif = XMLInputFactory.newInstance();
 		try {
@@ -146,26 +163,243 @@ public class CodeSearchEngineInputStreamImpl implements
 				// Analyze each beacon
 				switch (eventType) {
 				case XMLEvent.START_ELEMENT:
+					if (xmlsr.getLocalName().equals("unit")) {
+						pathValue = xmlsr.getAttributeValue(1);
+						inUnit = !inUnit;
+					} else if (xmlsr.getLocalName().equals("class")) {
+						extendsValue = ""; // reset
+						classValue = "";
+						inClass = !inClass;
+					} else if (xmlsr.getLocalName().equals("extends"))
+						inExtends = !inExtends;
+					else if (xmlsr.getLocalName().equals("name") && inExtends)
+						inExtendsName = !inExtendsName;
+					else if (xmlsr.getLocalName().equals("name") && inClass)
+						inClassName = !inClassName;
+					else if (xmlsr.getLocalName().equals("package")) {
+						inPackage = !inPackage;
+						packageValue = ""; // Reset
+					}
+					if (inPackage && xmlsr.getLocalName().equals("name"))
+						inPackageName = !inPackageName;
 					break;
 				case XMLEvent.CHARACTERS:
+					if (inExtendsName) {
+						extendsValue = xmlsr.getText();
+					}
+
+					if (inClassName && classValue.equals("")) {
+						classValue = xmlsr.getText();
+					}
+
+					// Extract package
+					if (inPackageName) {
+						if (packageValue.equals(""))
+							packageValue += xmlsr.getText();
+						else
+							packageValue += "." + xmlsr.getText();
+					}
+
 					break;
 				case XMLEvent.END_ELEMENT:
+					if (xmlsr.getLocalName().equals("unit")) {
+						inUnit = !inUnit;
+					} else if (xmlsr.getLocalName().equals("class")) {
+						inClass = !inClass;
+					} else if (xmlsr.getLocalName().equals("extends")) {
+						inExtends = !inExtends;
+						// Get Location
+						Location locationValue = new LocationImpl(pathValue);
+						// Create Method
+						TypeImpl type = new TypeImpl(classValue, packageValue,
+								TypeKind.CLASS, locationValue);
+
+						// Ajout hashMap
+						// if (!hashExceptions.containsKey(extendsValue))
+						// hashExceptions.put(extendsValue,
+						// new ArrayList<Type>());
+						// hashExceptions.get(extendsValue).add(type);
+
+						// Got all the informations we need
+						if (extendsValue.equals(typeName)) {
+							listType.add(type);
+						}
+					} else if (xmlsr.getLocalName().equals("name") && inExtends)
+						inExtendsName = !inExtendsName;
+					else if (xmlsr.getLocalName().equals("name") && inClass)
+						inClassName = !inClassName;
+					else if (xmlsr.getLocalName().equals("package"))
+						inPackage = !inPackage;
+					if (inPackage && xmlsr.getLocalName().equals("name"))
+						inPackageName = !inPackageName;
 					break;
 				default:
 					break;
 				}
 			}
-
 		} catch (XMLStreamException e) {
 			throw new RuntimeException(e);
 		}
+
+		// // Analyze if there is some level of Exception
+		// Queue<Type> tampon = new LinkedList<Type>();
+		// for (Type t : listType)
+		// tampon.add(t); // copy
+		// int tamponSizeOld = tampon.size();
+		// int tamponSizeNew = 0;
+		// boolean stop = false;
+		// while ((tampon.size() != 0) && !stop) {
+		// List<Type> toAdd = new ArrayList<Type>();
+		// if (tamponSizeOld != tamponSizeNew) {
+		// tamponSizeOld = tampon.size();
+		// for (Type t2 : tampon) {
+		// if (hashExceptions.containsKey(t2)) {
+		// // If extends a good exception
+		// for (Type t3 : hashExceptions.get(t2)) {
+		// toAdd.add(t3);
+		// }
+		// }
+		// }
+		// for (Type t : toAdd) {
+		// listType.add(t);
+		// tampon.add(t);
+		// }
+		// tamponSizeNew = tampon.size();
+		// } else {
+		// stop = true;
+		// }
+		// }
 		return listType;
 	}
 
 	@Override
 	public List<Field> findFieldsTypedWith(String typeName, InputStream data) {
-		// TODO Auto-generated method stub
-		return null;
+		XMLInputFactory xmlif = XMLInputFactory.newInstance();
+		XMLStreamReader xmlsr;
+
+		boolean in_class = false;
+		boolean in_class_name = false;
+		boolean have_name_class = false;
+		boolean in_good_class = false;
+		boolean in_class_decl_stmt = false;
+		boolean exit = false;
+		boolean in_class_constructor = false;
+		boolean in_class_function = false;
+		boolean in_class_decl_stmt_type_name = false;
+		boolean in_class_decl_stmt_name = false;
+		boolean in_class_decl_stmt_init = false;
+
+		List<Field> listfield = new ArrayList<Field>();
+		String tmp_field = "";
+
+		try {
+			xmlsr = xmlif.createXMLStreamReader(data);
+			int eventType;
+			while (xmlsr.hasNext() && (exit == false)) {
+				eventType = xmlsr.next();
+				switch (eventType) {
+				case XMLEvent.START_ELEMENT:
+					if (xmlsr.getLocalName().equals("class")) {
+						in_class = true;
+					}
+					if (in_class && xmlsr.getLocalName().equals("name")
+							&& !have_name_class) {
+						in_class_name = true;
+					}
+
+					if (in_good_class
+							&& xmlsr.getLocalName().equals("constructor")) {
+						in_class_constructor = true;
+					}
+
+					if (in_good_class
+							&& xmlsr.getLocalName().equals("function")) {
+						in_class_function = true;
+					}
+
+					if (in_good_class
+							&& xmlsr.getLocalName().equals("decl_stmt")) {
+						if (!in_class_constructor && !in_class_function) {
+							in_class_decl_stmt = true;
+						}
+					}
+
+					if (in_good_class && in_class_decl_stmt
+							&& xmlsr.getLocalName().equals("type")) {
+						in_class_decl_stmt_type_name = true;
+					}
+
+					if (in_good_class && in_class_decl_stmt
+							&& xmlsr.getLocalName().equals("init")) {
+						in_class_decl_stmt_init = true;
+					}
+
+					if (in_good_class && in_class_decl_stmt
+							&& xmlsr.getLocalName().equals("name")
+							&& !in_class_decl_stmt_init) {
+						in_class_decl_stmt_name = true;
+					}
+
+					if (in_good_class && in_class_decl_stmt
+							&& xmlsr.getLocalName().equals("index")
+							&& !in_class_decl_stmt_init) {
+						in_class_decl_stmt_name = true;
+					}
+
+					break;
+				case XMLEvent.CHARACTERS:
+					if (in_class && in_class_name) {
+						String text = xmlsr.getText();
+						if (text.equals(typeName)) {
+							in_good_class = true;
+						}
+						have_name_class = true;
+						in_class_name = false;
+					}
+					if (in_class_decl_stmt_type_name) {
+						tmp_field += " " + xmlsr.getText();
+						in_class_decl_stmt_type_name = false;
+					}
+					if (in_class_decl_stmt_name) {
+						tmp_field += " " + xmlsr.getText();
+						in_class_decl_stmt_name = false;
+					}
+					break;
+				case XMLEvent.END_ELEMENT:
+					if (xmlsr.getLocalName().equals("class")) {
+						in_class = false;
+						have_name_class = false;
+						in_class_name = false;
+						exit = in_good_class;
+					}
+					if (xmlsr.getLocalName().equals("constructor")) {
+						in_class_constructor = false;
+					}
+					if (xmlsr.getLocalName().equals("function")) {
+						in_class_function = false;
+					}
+					if (xmlsr.getLocalName().equals("decl_stmt")
+							&& in_good_class) {
+						if (!tmp_field.isEmpty()) {
+							Field f = new FieldImpl(tmp_field, null);
+							listfield.add(f);
+							tmp_field = "";
+							in_class_decl_stmt = false;
+						}
+					}
+					if (xmlsr.getLocalName().equals("init")) {
+						in_class_decl_stmt_init = false;
+					}
+					break;
+
+				}
+			}
+
+		} catch (XMLStreamException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return listfield;
 	}
 
 	@Override
