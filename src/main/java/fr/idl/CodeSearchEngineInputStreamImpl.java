@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -372,7 +373,7 @@ public class CodeSearchEngineInputStreamImpl implements
 	 */
 	@Override
 	public List<Method> findMethodsReturning(String typeName, InputStream data) {
-		List<Method> listMethod = new ArrayList<Method>();
+		List<Method> listMethods = new ArrayList<Method>();
 
 		boolean function = false;
 		boolean type = false;
@@ -449,7 +450,7 @@ public class CodeSearchEngineInputStreamImpl implements
 									new TypeImpl(typeValue, packageValue,
 											kindValue, locationValue),
 									new TypeImpl(), new ArrayList<Type>());
-							listMethod.add(method);
+							listMethods.add(method);
 						}
 						// Reset not matter what
 						function = !function;
@@ -479,7 +480,7 @@ public class CodeSearchEngineInputStreamImpl implements
 			throw new RuntimeException(e);
 		}
 
-		return listMethod;
+		return listMethods;
 	}
 
 	@Override
@@ -491,8 +492,117 @@ public class CodeSearchEngineInputStreamImpl implements
 
 	@Override
 	public List<Method> findMethodsCalled(String methodName, InputStream data) {
-		// TODO Auto-generated method stub
-		return null;
+		ArrayList<Method> listMethods = new ArrayList<>();
+
+		XMLInputFactory xmlif = XMLInputFactory.newInstance();
+		try {
+			XMLStreamReader xmlsr = xmlif.createXMLStreamReader(data);
+
+			SAXBuilder builder = new SAXBuilder();
+			int eventType;
+			while (xmlsr.hasNext()) {
+				eventType = xmlsr.next();
+
+				if (eventType != XMLEvent.START_ELEMENT
+						|| !xmlsr.getText().equals("^function[_A-Za-z]*")) {
+					continue;
+				}
+
+				// some method found
+
+				// Build a DOM string
+				String builderDOMStructure = "<root>";
+				while (xmlsr.hasNext()) {
+					eventType = xmlsr.next();
+
+					if (eventType == XMLEvent.END_ELEMENT
+							&& xmlsr.getLocalName().matches(
+									"^function[_A-Za-z]*$")) {
+						break;
+					}
+
+					// build ur DOM string
+					switch (eventType) {
+					case XMLEvent.START_ELEMENT:
+						builderDOMStructure += "<" + xmlsr.getLocalName() + ">";
+						break;
+					case XMLEvent.END_ELEMENT:
+						builderDOMStructure += "</" + xmlsr.getLocalName()
+								+ ">";
+						break;
+
+					case XMLEvent.CHARACTERS:
+						builderDOMStructure += Util.escapeSpecialsCaract(xmlsr
+								.getText());
+						break;
+
+					default:
+						break;
+					}
+
+					if (eventType == XMLEvent.END_ELEMENT
+							&& xmlsr.getLocalName().equals("parameter_list")) {
+						break;
+					}
+				}
+
+				builderDOMStructure += "</root>";
+				log.trace(builderDOMStructure);
+
+				// Build DOM Structure from string
+				InputStream inputStreamDOM = new ByteArrayInputStream(
+						builderDOMStructure.getBytes());
+
+				try {
+					Document document = (Document) builder
+							.build(inputStreamDOM);
+					Element rootNode = document.getRootElement();
+
+					// this is the right method ?
+					String name = rootNode.getChildText("name");
+					if (!name.equals(methodName)) {
+						builderDOMStructure = null;
+						continue;
+					}
+
+					// now we can build ur method object
+					MethodImpl method = new MethodImpl();
+
+					// Name
+					method.setName(name);
+
+					// Type
+					Element methodTypeName = rootNode.getChild("type")
+							.getChild("name");
+					method.setType(new TypeImpl(Util
+							.getFullName(methodTypeName), "", null, null));
+
+					// Parameters
+					ArrayList<Type> parameters = new ArrayList<Type>();
+					for (Iterator paramIterator = rootNode
+							.getChild("parameter_list").getChildren("param")
+							.iterator(); paramIterator.hasNext();) {
+						Element node = (Element) paramIterator.next();
+
+						Element typeNameNode = node.getChild("decl")
+								.getChild("type").getChild("name");
+						parameters.add(new TypeImpl(Util
+								.getFullName(typeNameNode), "", null,
+								new LocationImpl("")));
+					}
+					method.setParameters(parameters);
+
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				} catch (JDOMException e) {
+					throw new RuntimeException(e);
+				}
+			}
+		} catch (XMLStreamException e) {
+			throw new RuntimeException(e);
+		}
+
+		return listMethods;
 	}
 
 	/**
@@ -500,32 +610,7 @@ public class CodeSearchEngineInputStreamImpl implements
 	 */
 	@Override
 	public List<Method> findOverridingMethodsOf(Method method, InputStream data) {
-		ArrayList<Method> listMethod = new ArrayList<>();
-
-		XMLInputFactory xmlif = XMLInputFactory.newInstance();
-		try {
-			XMLStreamReader xmlsr = xmlif.createXMLStreamReader(data);
-
-			int eventType;
-
-			while (xmlsr.hasNext()) {
-				eventType = xmlsr.next();
-
-				if (eventType == XMLEvent.CHARACTERS
-						&& xmlsr.getText().equals("@")) {
-					eventType = xmlsr.next();
-
-					if (eventType == XMLEvent.CHARACTERS
-							&& xmlsr.getText().equals("^function[_A-Za-z]*")) {
-						log.debug(xmlsr.getLocation());
-					}
-				}
-			}
-		} catch (XMLStreamException e) {
-			throw new RuntimeException(e);
-		}
-
-		return listMethod;
+		return Collections.EMPTY_LIST;
 	}
 
 	@Override
