@@ -3,14 +3,16 @@ package main.java.fr.idl;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.Queue;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.events.XMLEvent;
-
-import main.java.fr.idl.CodeSearchEngine.Type;
 
 import org.apache.log4j.Logger;
 
@@ -133,7 +135,8 @@ public class CodeSearchEngineInputStreamImpl implements
 	@Override
 	public List<Type> findSubTypesOf(String typeName, InputStream data) {
 		List<Type> listType = new ArrayList<Type>();
-		
+		HashMap<String,List<Type>> hashExceptions = new HashMap<String,List<Type>>();
+				
 		boolean inExtends = false;
 		boolean inExtendsName = false;
 		String extendsValue = "";
@@ -202,12 +205,18 @@ public class CodeSearchEngineInputStreamImpl implements
 						inClass = !inClass;
 					} else if (xmlsr.getLocalName().equals("extends")) {
 						inExtends = !inExtends;
+						// Get Location
+						Location locationValue = new LocationImpl(pathValue);
+						// Create Method
+						TypeImpl type = new TypeImpl(classValue, packageValue, TypeKind.CLASS, locationValue);
+						
+						// Ajout hashMap
+						if (!hashExceptions.containsKey(extendsValue))
+							hashExceptions.put(extendsValue, new ArrayList<Type>());
+						hashExceptions.get(extendsValue).add(type);
+						
 						// Got all the informations we need
 						if (extendsValue.equals(typeName)) {
-							// Get Location
-							Location locationValue = new LocationImpl(pathValue);
-							// Create Method
-							TypeImpl type = new TypeImpl(classValue, packageValue, TypeKind.CLASS, locationValue);
 							listType.add(type);
 						}
 					} else if (xmlsr.getLocalName().equals("name") && inExtends)
@@ -225,6 +234,27 @@ public class CodeSearchEngineInputStreamImpl implements
 			}
 		} catch (XMLStreamException e) {
 			throw new RuntimeException(e);
+		}
+		
+		// Analyze if there is some level of Exception
+		Queue<Type> tampon = new LinkedList<Type>();
+		Iterator it = hashExceptions.keySet().iterator();
+		while (it.hasNext()){
+			String cle = (String) it.next();
+			List<Type> valeur = hashExceptions.get(cle);
+			tampon.addAll(valeur);
+		}
+		int round = tampon.size();
+		while (tampon.size() != 0 && (round != tampon.size())) {
+			
+			for (Type t : listType) {
+				if (hashExceptions.containsKey(t)) {
+					listType.add(t);
+					for (Type t2 : hashExceptions.get(t)) {
+						tampon.add(t2);
+					}
+				}
+			}
 		}
 		return listType;
 	}
