@@ -9,8 +9,13 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.events.XMLEvent;
 
+import org.apache.log4j.Logger;
+
 public class CodeSearchEngineInputStreamImpl implements
 		CodeSearchEngineInputStream {
+
+	static final Logger log = Logger
+			.getLogger(CodeSearchEngineInputStreamImpl.class);
 
 	@Override
 	public Type findType(String typeName, InputStream data) {
@@ -132,29 +137,24 @@ public class CodeSearchEngineInputStreamImpl implements
 						}
 
 						// DEBUG
-						// System.out.println("Method match - Line : "
-						// + xmlsr.getLocation().getLineNumber());
+						log.debug("Method match - Line : "
+								+ xmlsr.getLocation().getLineNumber());
 
-						// method found
+						// method found (function)
 						MethodImpl method = new MethodImpl();
 
-						// looking for Type
+						// looking for function.type
 						if ((eventType = xmlsr.next()) != XMLEvent.START_ELEMENT) {
 							throw new RuntimeException(
 									"Malformed file. '<type>' was expected.");
 						}
 
+						// looking for function.type.name
 						while (xmlsr.hasNext()) {
 							eventType = xmlsr.next();
 
-							// XXX implémnter le type
-							// ending type (starting name)
-							if (eventType == XMLEvent.END_ELEMENT
-									&& xmlsr.getLocalName().equals("type")) {
-								// DEBUG
-								// System.out.println("</type> match - Line : "
-								// + xmlsr.getLocation().getLineNumber());
-
+							if (eventType == XMLEvent.START_ELEMENT
+									&& xmlsr.getLocalName().equals("name")) {
 								break;
 							}
 						}
