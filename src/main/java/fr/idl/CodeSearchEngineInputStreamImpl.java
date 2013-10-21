@@ -193,12 +193,16 @@ public class CodeSearchEngineInputStreamImpl implements
 		boolean function = false;
 		boolean type = false;
 		boolean name = false;
+		boolean inPackage = false;
+		boolean inPackageName = false;
+		
 		boolean typeOK = false;
 		boolean nameOK = false;
-
+		
 		String typeValue = ""; // Returning type
 		String nameValue = ""; // Method name
-
+		String packageValue = "";
+		
 		XMLInputFactory xmlif = XMLInputFactory.newInstance();
 		try {
 			XMLStreamReader xmlsr = xmlif.createXMLStreamReader(data);
@@ -213,24 +217,33 @@ public class CodeSearchEngineInputStreamImpl implements
 						if (xmlsr.getLocalName().equals("type"))
 							type = !type;
 						if (xmlsr.getLocalName().equals("name"))
-							name = !name;
+							name = !name; // Method name
+						if (xmlsr.getLocalName().equals("package")) {
+							inPackage = !inPackage;
+							packageValue = ""; // Reset
+						}
+						if (inPackage && xmlsr.getLocalName().equals("name"))
+							inPackageName = !inPackageName;
 						break;
 					case XMLEvent.CHARACTERS :
 						// Extract the return type
 						if (function && type && name && !typeOK) {
-							// System.out.println("Return type : "
-							// + xmlsr.getText());
 							typeValue = xmlsr.getText();
 							typeOK = !typeOK;
 						}
 
 						// Extract the method name
 						if (function && !type && name && typeOK && !nameOK) {
-							// System.out.println("Method name : "
-							// + xmlsr.getText());
-							// System.out.println();
 							nameValue = xmlsr.getText();
 							nameOK = !nameOK;
+						}
+						
+						// Extract package
+						if (inPackageName) {
+							if (packageValue.equals(""))
+								packageValue += xmlsr.getText();
+							else
+								packageValue += "."+xmlsr.getText();
 						}
 						break;
 					case XMLEvent.END_ELEMENT :
@@ -238,10 +251,14 @@ public class CodeSearchEngineInputStreamImpl implements
 						if (xmlsr.getLocalName().equals("function")) {
 							// Adding Method if returning type is correct
 							if (typeValue.equals(typeName)) {
+								// Get Kind
+								TypeKind kindValue = TypeKind.CLASS ;
+								// Get Location
+								Location locationValue = new LocationImpl();
+								// Create Method
 								MethodImpl method = new MethodImpl(nameValue,
-										new TypeImpl(typeValue, new String(),
-												TypeKind.CLASS,
-												new LocationImpl()),
+										new TypeImpl(typeValue, packageValue,
+												kindValue, locationValue),
 										new TypeImpl(), new ArrayList<Type>());
 								listMethod.add(method);
 							}
@@ -256,6 +273,11 @@ public class CodeSearchEngineInputStreamImpl implements
 							type = !type;
 						if (xmlsr.getLocalName().equals("name"))
 							name = !name;
+						if (xmlsr.getLocalName().equals("package"))
+							inPackage = !inPackage;
+							
+						if (inPackage && xmlsr.getLocalName().equals("name"))
+							inPackageName = !inPackageName;
 						break;
 					default :
 						break;

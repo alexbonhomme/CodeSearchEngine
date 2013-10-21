@@ -3,8 +3,11 @@ package main.java.fr.idl;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.List;
 
 import javax.xml.xpath.XPathExpressionException;
+
+import main.java.fr.idl.CodeSearchEngine.Method;
 
 public class Main {
 
@@ -24,11 +27,17 @@ public class Main {
 			System.out.println("Total file size to read (in bytes) : "
 					+ fis.available());
 
+			double start = System.currentTimeMillis();
 			CodeSearchEngineInputStreamImpl oneShot = new CodeSearchEngineInputStreamImpl();
 
-			// Call your method
-			oneShot.findMethodsReturning("void", fis);
-
+			// Call methods returning type + print
+			List<Method> l = oneShot.findMethodsReturning("void", fis);
+			for (Method m : l) {
+				System.out.println(m);
+			}
+			double end = System.currentTimeMillis();
+			System.out.println("Time : " + (end-start) + "ms");
+			
 		} catch (IOException e) {
 			e.printStackTrace();
 		} finally {

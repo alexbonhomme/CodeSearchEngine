@@ -44,5 +44,10 @@ public class TypeImpl implements Type {
 	public Location getDeclaration() {
 		return this.declaration;
 	}
+	
+	public String toString() {
+		return "Package\t" + this.getFullyQualifiedPackageName() + "\n"
+				+ "Return\t" + this.getName() + "\n" ;
+	}
 
 }

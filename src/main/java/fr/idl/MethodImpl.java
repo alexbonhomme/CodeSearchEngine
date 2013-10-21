@@ -86,4 +86,7 @@ public class MethodImpl implements Method {
 		this.parameters = parameters;
 	}
 
+	public String toString() {
+		return this.type.toString() + "Name\t"+this.name + "\n";
+	}
 }
