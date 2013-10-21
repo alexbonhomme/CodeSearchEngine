@@ -83,6 +83,13 @@ public class CodeSearchEngineInputStreamImplTest {
 		Type t2 = cse.findType("FactoryUtils", data);
 		assertEquals(t1,t2);
 	}
+	
+	@Test
+	public void testFindTypeInterface(){
+		Type t1 = new TypeImpl("Get","org.apache.commons.collections.",TypeKind.INTERFACE,new LocationImpl("dataset-src/org/apache/commons/collections/Get.java"));
+		Type t2 = cse.findType("Get", data);
+		assertEquals(t1,t2);		
+	}
 
 	@Test
 	public void testFindMethodsReturning() {
