@@ -24,16 +24,16 @@ public class Main {
 		try {
 			fis = new FileInputStream(file);
 
-			System.out.println("Total file size to read (in bytes) : "
-					+ fis.available());
+			System.out.println("Total file size to read : "
+					+ fis.available() + " bytes\n-------------");
 
 			CodeSearchEngineInputStreamImpl oneShot = new CodeSearchEngineInputStreamImpl();
 
 			// Call methods returning type + print + timer
 			double start = System.currentTimeMillis();
-			List<Method> l = oneShot.findMethodsReturning("void", fis);
+			List<Method> l = oneShot.findMethodsReturning("int", fis);
 			double end = System.currentTimeMillis();
-			
+			System.out.println(l.size() + " result(s)\n-------------");
 			for (Method m : l) {
 				System.out.println(m);
 			}
