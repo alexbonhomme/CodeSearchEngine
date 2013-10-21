@@ -9,13 +9,115 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.events.XMLEvent;
 
+import main.java.fr.idl.CodeSearchEngine.TypeKind;
+
 public class CodeSearchEngineInputStreamImpl implements
 		CodeSearchEngineInputStream {
 
 	@Override
 	public Type findType(String typeName, InputStream data) {
-		// TODO Auto-generated method stub
-		return null;
+		String class_name = "";
+		String filename = "";
+		List<String> package_name = new ArrayList<String>();
+		String type = "" ; 
+		
+		boolean in_class = false;
+		boolean in_unit = false;
+		boolean in_class_name = false;
+		boolean stop = false;
+		boolean in_package = false;
+		boolean in_package_name = false;
+		boolean have_type = false;
+		boolean in_block = false;
+		
+		XMLInputFactory xmlif = XMLInputFactory.newInstance();
+		XMLStreamReader xmlsr;
+		try {
+			xmlsr = xmlif.createXMLStreamReader(data);
+			while (xmlsr.hasNext() && (stop == false)) {
+				int eventType = xmlsr.next();
+				switch (eventType) {
+					case XMLEvent.START_ELEMENT :
+						if(xmlsr.getLocalName().equals("unit")){
+							in_block = false;
+							in_unit = true;
+							filename = xmlsr.getAttributeValue(1);
+						}
+						if(xmlsr.getLocalName().equals("class") ){
+							in_class = true;
+						}
+						if(in_class && xmlsr.getLocalName().equals("name")){
+							in_class_name = true;
+						}
+						if(in_unit && xmlsr.getLocalName().equals("package")){
+							in_package = true;
+						}
+						if(in_package && xmlsr.getLocalName().equals("name")){
+							in_package_name = true;
+						}
+						if(xmlsr.getLocalName().equals("block")){
+							in_block = true;
+						}
+	
+					break;
+					case XMLEvent.CHARACTERS:
+						if(in_class){
+							if(!xmlsr.getText().equals(typeName)){
+								type = xmlsr.getText().trim();
+							}
+						}
+						if(in_class && in_class_name){
+							in_class_name = false;
+							class_name = xmlsr.getText();
+							if(class_name.equals(typeName)&& !in_block){
+								stop = true;
+							}
+						}
+						if(in_package && in_package_name){
+							in_package_name = false;
+							package_name.add(xmlsr.getText());
+						}
+					break;
+					case XMLEvent.END_ELEMENT:
+						if(xmlsr.getLocalName().equals("package")){
+							in_package = false;
+							in_package_name = false;
+						}
+						if(xmlsr.getLocalName().equals("unit")){
+							if(!class_name.equals(typeName)){
+								package_name.clear();
+							}
+						}
+					break;
+				}
+			}
+			
+			
+		}catch (XMLStreamException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		if(stop){
+			String res ="";
+			for(String s : package_name){
+				res += s+".";
+			}
+			TypeKind kind = null ; 
+			switch(type){
+				case "class":
+					kind = TypeKind.CLASS;
+				break;
+				case "interface":
+					kind = TypeKind.INTERFACE;
+				break;
+				case "enum":
+					kind = TypeKind.ENUM;
+					break;
+			}
+			return new TypeImpl(class_name,res,kind,new LocationImpl(filename));
+		}else{
+			return null;
+		}
 	}
 
 	@Override

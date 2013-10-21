@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import main.java.fr.idl.CodeSearchEngine.Method;
+import main.java.fr.idl.CodeSearchEngine.Type;
+import main.java.fr.idl.CodeSearchEngine.TypeKind;
 
 import org.junit.After;
 import org.junit.Before;
@@ -66,6 +68,14 @@ public class CodeSearchEngineInputStreamImplTest {
 		assertEquals("search", methods.get(5).getName());
 		assertEquals("get", methods.get(6).getName());
 		assertEquals("remove", methods.get(7).getName());
+	}
+	
+	@Test
+	public void testFindType(){
+		Type t1 = new TypeImpl("FactoryUtils","org.apache.commons.collections.",TypeKind.CLASS,new LocationImpl("dataset-src/org/apache/commons/collections/FactoryUtils.java"));
+		Type t2 = new TypeImpl("FactoryUtils","org.apache.commons.collections.",TypeKind.CLASS,new LocationImpl("dataset-src/org/apache/commons/collections/FactoryUtils.java"));
+		//Type t2 = cse.findType("FactoryUtils", data);
+		assertEquals(t1,t2);
 	}
 
 }
