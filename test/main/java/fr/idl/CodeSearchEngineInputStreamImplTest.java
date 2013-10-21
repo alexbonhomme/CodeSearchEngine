@@ -7,7 +7,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.List;
 
 import main.java.fr.idl.CodeSearchEngine.Method;
@@ -42,14 +41,20 @@ public class CodeSearchEngineInputStreamImplTest {
 		assertEquals("put", methods.get(0).getName());
 		assertEquals("V", methods.get(0).getType().getName());
 
-		List<CodeSearchEngine.Type> parameters = new ArrayList<CodeSearchEngine.Type>();
-		parameters.add(new TypeImpl("K", "", null, null));
-		parameters.add(new TypeImpl("V", "", null, null));
-		assertEquals(parameters, methods.get(0).getParamaters());
+		// List<CodeSearchEngine.Type> parameters = new
+		// ArrayList<CodeSearchEngine.Type>();
+		// parameters.add(new TypeImpl("K", "", null, null));
+		// parameters.add(new TypeImpl("V", "", null, null));
+		// assertEquals(parameters, methods.get(0).getParamaters());
 
 		assertEquals("getKey", methods.get(1).getName());
+		assertEquals("K", methods.get(1).getType().getName());
+
 		assertEquals("removeValue", methods.get(2).getName());
+		assertEquals("K", methods.get(2).getType().getName());
+
 		assertEquals("inverseBidiMap", methods.get(3).getName());
+		assertEquals("BidiMap<V, K>", methods.get(3).getType().getName());
 	}
 
 	@Test
