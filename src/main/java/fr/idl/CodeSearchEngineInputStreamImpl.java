@@ -137,6 +137,13 @@ public class CodeSearchEngineInputStreamImpl implements
 
 						// method found
 						MethodImpl method = new MethodImpl();
+
+						// looking for Type
+						if ((eventType = xmlsr.next()) != XMLEvent.START_ELEMENT) {
+							throw new RuntimeException(
+									"Malformed file. '<type>' was expected.");
+						}
+
 						while (xmlsr.hasNext()) {
 							eventType = xmlsr.next();
 
@@ -196,15 +203,15 @@ public class CodeSearchEngineInputStreamImpl implements
 		boolean inPackage = false;
 		boolean inPackageName = false;
 		boolean inUnit = false;
-		
+
 		boolean typeOK = false;
 		boolean nameOK = false;
-		
+
 		String pathValue = "";
 		String typeValue = ""; // Returning type
 		String nameValue = ""; // Method name
 		String packageValue = "";
-		
+
 		XMLInputFactory xmlif = XMLInputFactory.newInstance();
 		try {
 			XMLStreamReader xmlsr = xmlif.createXMLStreamReader(data);
@@ -212,83 +219,83 @@ public class CodeSearchEngineInputStreamImpl implements
 				int eventType = xmlsr.next();
 				// Analyze each beacon
 				switch (eventType) {
-					case XMLEvent.START_ELEMENT :
-						// Trace where we are
-						if (xmlsr.getLocalName().equals("unit")) {
-							pathValue = xmlsr.getAttributeValue(1);
-							inUnit = !inUnit;
-						}
-						if (xmlsr.getLocalName().equals("function"))
-							function = !function;
-						if (xmlsr.getLocalName().equals("type"))
-							type = !type;
-						if (xmlsr.getLocalName().equals("name"))
-							name = !name; // Method name
-						if (xmlsr.getLocalName().equals("package")) {
-							inPackage = !inPackage;
-							packageValue = ""; // Reset
-						}
-						if (inPackage && xmlsr.getLocalName().equals("name"))
-							inPackageName = !inPackageName;
-						break;
-					case XMLEvent.CHARACTERS :
-						// Extract the return type
-						if (function && type && name && !typeOK) {
-							typeValue = xmlsr.getText();
-							typeOK = !typeOK;
-						}
+				case XMLEvent.START_ELEMENT:
+					// Trace where we are
+					if (xmlsr.getLocalName().equals("unit")) {
+						pathValue = xmlsr.getAttributeValue(1);
+						inUnit = !inUnit;
+					}
+					if (xmlsr.getLocalName().equals("function"))
+						function = !function;
+					if (xmlsr.getLocalName().equals("type"))
+						type = !type;
+					if (xmlsr.getLocalName().equals("name"))
+						name = !name; // Method name
+					if (xmlsr.getLocalName().equals("package")) {
+						inPackage = !inPackage;
+						packageValue = ""; // Reset
+					}
+					if (inPackage && xmlsr.getLocalName().equals("name"))
+						inPackageName = !inPackageName;
+					break;
+				case XMLEvent.CHARACTERS:
+					// Extract the return type
+					if (function && type && name && !typeOK) {
+						typeValue = xmlsr.getText();
+						typeOK = !typeOK;
+					}
 
-						// Extract the method name
-						if (function && !type && name && typeOK && !nameOK) {
-							nameValue = xmlsr.getText();
-							nameOK = !nameOK;
+					// Extract the method name
+					if (function && !type && name && typeOK && !nameOK) {
+						nameValue = xmlsr.getText();
+						nameOK = !nameOK;
+					}
+
+					// Extract package
+					if (inPackageName) {
+						if (packageValue.equals(""))
+							packageValue += xmlsr.getText();
+						else
+							packageValue += "." + xmlsr.getText();
+					}
+					break;
+				case XMLEvent.END_ELEMENT:
+					// Trace where we are
+					if (xmlsr.getLocalName().equals("function")) {
+						// Adding Method if returning type is correct
+						if (typeValue.equals(typeName)) {
+							// Get Kind
+							TypeKind kindValue = TypeKind.CLASS;
+							// Get Location
+							Location locationValue = new LocationImpl(pathValue);
+							// Create Method
+							MethodImpl method = new MethodImpl(nameValue,
+									new TypeImpl(typeValue, packageValue,
+											kindValue, locationValue),
+									new TypeImpl(), new ArrayList<Type>());
+							listMethod.add(method);
 						}
-						
-						// Extract package
-						if (inPackageName) {
-							if (packageValue.equals(""))
-								packageValue += xmlsr.getText();
-							else
-								packageValue += "."+xmlsr.getText();
-						}
-						break;
-					case XMLEvent.END_ELEMENT :
-						// Trace where we are
-						if (xmlsr.getLocalName().equals("function")) {
-							// Adding Method if returning type is correct
-							if (typeValue.equals(typeName)) {
-								// Get Kind
-								TypeKind kindValue = TypeKind.CLASS ;
-								// Get Location
-								Location locationValue = new LocationImpl(pathValue);
-								// Create Method
-								MethodImpl method = new MethodImpl(nameValue,
-										new TypeImpl(typeValue, packageValue,
-												kindValue, locationValue),
-										new TypeImpl(), new ArrayList<Type>());
-								listMethod.add(method);
-							}
-							// Reset not matter what
-							function = !function;
-							typeOK = !typeOK; // ready for an other function
-							nameOK = !nameOK;
-							typeValue = "";
-							nameValue = "";
-						}
-						if (xmlsr.getLocalName().equals("unit"))
-							inUnit = !inUnit;
-						if (xmlsr.getLocalName().equals("type"))
-							type = !type;
-						if (xmlsr.getLocalName().equals("name"))
-							name = !name;
-						if (xmlsr.getLocalName().equals("package"))
-							inPackage = !inPackage;
-							
-						if (inPackage && xmlsr.getLocalName().equals("name"))
-							inPackageName = !inPackageName;
-						break;
-					default :
-						break;
+						// Reset not matter what
+						function = !function;
+						typeOK = !typeOK; // ready for an other function
+						nameOK = !nameOK;
+						typeValue = "";
+						nameValue = "";
+					}
+					if (xmlsr.getLocalName().equals("unit"))
+						inUnit = !inUnit;
+					if (xmlsr.getLocalName().equals("type"))
+						type = !type;
+					if (xmlsr.getLocalName().equals("name"))
+						name = !name;
+					if (xmlsr.getLocalName().equals("package"))
+						inPackage = !inPackage;
+
+					if (inPackage && xmlsr.getLocalName().equals("name"))
+						inPackageName = !inPackageName;
+					break;
+				default:
+					break;
 				}
 			}
 
