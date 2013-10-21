@@ -345,9 +345,13 @@ public class CodeSearchEngineInputStreamImpl implements
 
 						// looking for function.type
 						if ((eventType = xmlsr.next()) != XMLEvent.START_ELEMENT) {
+							// TODO throw custom exception
 							throw new RuntimeException(
 									"Malformed file. '<type>' was expected.");
 						}
+
+						// type found
+						TypeImpl type = new TypeImpl("", "", null, null);
 
 						// looking for function.type.name
 						while (xmlsr.hasNext()) {
@@ -358,6 +362,24 @@ public class CodeSearchEngineInputStreamImpl implements
 								break;
 							}
 						}
+
+						String typeNameBuilder = "";
+						while (xmlsr.hasNext()) {
+							eventType = xmlsr.next();
+
+							if (eventType == XMLEvent.END_ELEMENT
+									&& xmlsr.getLocalName().equals("type")) {
+								break;
+							}
+							if (eventType == XMLEvent.CHARACTERS) {
+								typeNameBuilder += xmlsr.getText();
+							}
+						}
+
+						// Set the return type name of the method
+						type.setName(typeNameBuilder.replace("&lt;", "<")
+								.replace("&gt;", ">").trim());
+						method.setType(type);
 
 						// skip spaces
 						while (xmlsr.hasNext()
