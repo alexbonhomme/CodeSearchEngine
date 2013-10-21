@@ -7,6 +7,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 import main.java.fr.idl.CodeSearchEngine.Method;
@@ -22,11 +23,7 @@ public class CodeSearchEngineInputStreamImplTest {
 
 	@Before
 	public void testSetup() throws FileNotFoundException {
-		// TODO mettre un lien relatif
-		data = new FileInputStream(
-				new File(
-						"/home/alex/Documents/Cours/M2/IDL/CodeSearchEngine/xml/commons-collections.xml"));
-
+		data = new FileInputStream(new File("xml/commons-collections.xml"));
 		cse = new CodeSearchEngineInputStreamImpl();
 	}
 
@@ -43,6 +40,13 @@ public class CodeSearchEngineInputStreamImplTest {
 		assertEquals(4, methods.size());
 
 		assertEquals("put", methods.get(0).getName());
+		assertEquals("V", methods.get(0).getType().getName());
+
+		List<CodeSearchEngine.Type> parameters = new ArrayList<CodeSearchEngine.Type>();
+		parameters.add(new TypeImpl("K", "", null, null));
+		parameters.add(new TypeImpl("V", "", null, null));
+		assertEquals(parameters, methods.get(0).getParamaters());
+
 		assertEquals("getKey", methods.get(1).getName());
 		assertEquals("removeValue", methods.get(2).getName());
 		assertEquals("inverseBidiMap", methods.get(3).getName());
