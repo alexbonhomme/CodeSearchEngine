@@ -7,6 +7,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 import main.java.fr.idl.CodeSearchEngine.Method;
@@ -19,84 +20,81 @@ import org.junit.Test;
 
 public class CodeSearchEngineInputStreamImplTest {
 
-	InputStream data;
-	CodeSearchEngineInputStreamImpl cse;
+  InputStream data;
+  CodeSearchEngineInputStreamImpl cse;
 
-	@Before
-	public void testSetup() throws FileNotFoundException {
-		// TODO mettre un lien relatif
-		data = new FileInputStream(new File("xml/commons-collections.xml"));
-		cse = new CodeSearchEngineInputStreamImpl();
-	}
+  @Before
+  public void testSetup() throws FileNotFoundException {
+    // TODO mettre un lien relatif
+    data = new FileInputStream(new File("xml/commons-collections.xml"));
+    cse = new CodeSearchEngineInputStreamImpl();
+  }
 
-	@After
-	public void testCleanup() throws IOException {
-		data.close();
-		cse = null;
-	}
+  @After
+  public void testCleanup() throws IOException {
+    data.close();
+    cse = null;
+  }
 
-	@Test
-	public void testFindMethodsOfAnInterface() {
-		List<Method> methods = cse.findMethodsOf("BidiMap", data);
+  @Test
+  public void testFindMethodsOfAnInterface() {
+    List<Method> methods = cse.findMethodsOf("BidiMap", data);
 
-		assertEquals(4, methods.size());
+    assertEquals(4, methods.size());
 
-		assertEquals("put", methods.get(0).getName());
-		assertEquals("V", methods.get(0).getType().getName());
+    assertEquals("put", methods.get(0).getName());
+    assertEquals("V", methods.get(0).getType().getName());
 
-		// List<CodeSearchEngine.Type> parameters = new
-		// ArrayList<CodeSearchEngine.Type>();
-		// parameters.add(new TypeImpl("K", "", null, null));
-		// parameters.add(new TypeImpl("V", "", null, null));
-		// assertEquals(parameters, methods.get(0).getParamaters());
+    List<CodeSearchEngine.Type> parameters = new ArrayList<CodeSearchEngine.Type>();
+    parameters.add(new TypeImpl("K", "", null, null));
+    parameters.add(new TypeImpl("V", "", null, null));
+    assertEquals(parameters, methods.get(0).getParamaters());
 
-		assertEquals("getKey", methods.get(1).getName());
-		assertEquals("K", methods.get(1).getType().getName());
+    assertEquals("getKey", methods.get(1).getName());
+    assertEquals("K", methods.get(1).getType().getName());
 
-		assertEquals("removeValue", methods.get(2).getName());
-		assertEquals("K", methods.get(2).getType().getName());
+    assertEquals("removeValue", methods.get(2).getName());
+    assertEquals("K", methods.get(2).getType().getName());
 
-		assertEquals("inverseBidiMap", methods.get(3).getName());
-		assertEquals("BidiMap", methods.get(3).getType().getName());
-	}
+    assertEquals("inverseBidiMap", methods.get(3).getName());
+    // assertEquals("BidiMap<V, K>", methods.get(3).getType().getName());
+    assertEquals("BidiMap", methods.get(3).getType().getName());
+  }
 
-	@Test
-	public void testFindMethodsOfAClass() {
-		List<Method> methods = cse.findMethodsOf("ArrayStack", data);
+  @Test
+  public void testFindMethodsOfAClass() {
+    List<Method> methods = cse.findMethodsOf("ArrayStack", data);
 
-		assertEquals(8, methods.size());
+    assertEquals(8, methods.size());
 
-		assertEquals("empty", methods.get(0).getName());
-		assertEquals("boolean", methods.get(0).getType().getName());
+    assertEquals("empty", methods.get(0).getName());
+    assertEquals("boolean", methods.get(0).getType().getName());
 
-		assertEquals("peek", methods.get(1).getName());
-		assertEquals("peek", methods.get(2).getName());
-		assertEquals("pop", methods.get(3).getName());
-		assertEquals("push", methods.get(4).getName());
-		assertEquals("search", methods.get(5).getName());
-		assertEquals("get", methods.get(6).getName());
-		assertEquals("remove", methods.get(7).getName());
-	}
+    assertEquals("peek", methods.get(1).getName());
+    assertEquals("peek", methods.get(2).getName());
+    assertEquals("pop", methods.get(3).getName());
+    assertEquals("push", methods.get(4).getName());
+    assertEquals("search", methods.get(5).getName());
+    assertEquals("get", methods.get(6).getName());
+    assertEquals("remove", methods.get(7).getName());
+  }
 
-	@Test
-	public void testFindType() {
-		Type t1 = new TypeImpl(
-				"FactoryUtils",
-				"org.apache.commons.collections.",
-				TypeKind.CLASS,
-				new LocationImpl(
-						"dataset-src/org/apache/commons/collections/FactoryUtils.java"));
-		Type t2 = cse.findType("FactoryUtils", data);
-		assertEquals(t1, t2);
-	}
+  @Test
+  public void testFindType() {
+    Type t1 =
+        new TypeImpl("FactoryUtils", "org.apache.commons.collections.", TypeKind.CLASS,
+            new LocationImpl("dataset-src/org/apache/commons/collections/FactoryUtils.java"));
+    Type t2 = cse.findType("FactoryUtils", data);
+    assertEquals(t1, t2);
+  }
 
-	@Test
-	public void testFindMethodsReturning() {
-		List<Method> methods = cse.findMethodsReturning("int", data);
-		assertEquals("search", methods.get(0).getName());
-		assertEquals("int", methods.get(0).getType().getName());
-		assertEquals("org.apache.commons.collections", methods.get(0).getType()
-				.getFullyQualifiedPackageName());
-	}
+  @Test
+  public void testFindMethodsReturning() {
+    List<Method> methods = cse.findMethodsReturning("int", data);
+    assertEquals("search", methods.get(0).getName());
+    assertEquals("int", methods.get(0).getType().getName());
+    assertEquals("org.apache.commons.collections", methods.get(0).getType()
+        .getFullyQualifiedPackageName());
+  }
 
 }
