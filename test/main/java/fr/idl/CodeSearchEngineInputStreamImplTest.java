@@ -25,8 +25,7 @@ public class CodeSearchEngineInputStreamImplTest {
 	@Before
 	public void testSetup() throws FileNotFoundException {
 		// TODO mettre un lien relatif
-		data = new FileInputStream(
-				new File("xml/commons-collections.xml"));
+		data = new FileInputStream(new File("xml/commons-collections.xml"));
 		cse = new CodeSearchEngineInputStreamImpl();
 	}
 
@@ -58,7 +57,7 @@ public class CodeSearchEngineInputStreamImplTest {
 		assertEquals("K", methods.get(2).getType().getName());
 
 		assertEquals("inverseBidiMap", methods.get(3).getName());
-		assertEquals("BidiMap<V, K>", methods.get(3).getType().getName());
+		assertEquals("BidiMap", methods.get(3).getType().getName());
 	}
 
 	@Test
@@ -68,6 +67,8 @@ public class CodeSearchEngineInputStreamImplTest {
 		assertEquals(8, methods.size());
 
 		assertEquals("empty", methods.get(0).getName());
+		assertEquals("boolean", methods.get(0).getType().getName());
+
 		assertEquals("peek", methods.get(1).getName());
 		assertEquals("peek", methods.get(2).getName());
 		assertEquals("pop", methods.get(3).getName());
@@ -76,12 +77,17 @@ public class CodeSearchEngineInputStreamImplTest {
 		assertEquals("get", methods.get(6).getName());
 		assertEquals("remove", methods.get(7).getName());
 	}
-	
+
 	@Test
-	public void testFindType(){
-		Type t1 = new TypeImpl("FactoryUtils","org.apache.commons.collections.",TypeKind.CLASS,new LocationImpl("dataset-src/org/apache/commons/collections/FactoryUtils.java"));
+	public void testFindType() {
+		Type t1 = new TypeImpl(
+				"FactoryUtils",
+				"org.apache.commons.collections.",
+				TypeKind.CLASS,
+				new LocationImpl(
+						"dataset-src/org/apache/commons/collections/FactoryUtils.java"));
 		Type t2 = cse.findType("FactoryUtils", data);
-		assertEquals(t1,t2);
+		assertEquals(t1, t2);
 	}
 
 	@Test

@@ -1,5 +1,7 @@
 package main.java.fr.idl;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -9,10 +11,11 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.events.XMLEvent;
 
-
-import main.java.fr.idl.CodeSearchEngine.TypeKind;
 import org.apache.log4j.Logger;
-
+import org.jdom2.Document;
+import org.jdom2.Element;
+import org.jdom2.JDOMException;
+import org.jdom2.input.SAXBuilder;
 
 public class CodeSearchEngineInputStreamImpl implements
 		CodeSearchEngineInputStream {
@@ -25,8 +28,8 @@ public class CodeSearchEngineInputStreamImpl implements
 		String class_name = "";
 		String filename = "";
 		List<String> package_name = new ArrayList<String>();
-		String type = "" ; 
-		
+		String type = "";
+
 		boolean in_class = false;
 		boolean in_unit = false;
 		boolean in_class_name = false;
@@ -35,7 +38,7 @@ public class CodeSearchEngineInputStreamImpl implements
 		boolean in_package_name = false;
 		boolean have_type = false;
 		boolean in_block = false;
-		
+
 		XMLInputFactory xmlif = XMLInputFactory.newInstance();
 		XMLStreamReader xmlsr;
 		try {
@@ -43,85 +46,85 @@ public class CodeSearchEngineInputStreamImpl implements
 			while (xmlsr.hasNext() && (stop == false)) {
 				int eventType = xmlsr.next();
 				switch (eventType) {
-					case XMLEvent.START_ELEMENT :
-						if(xmlsr.getLocalName().equals("unit")){
-							in_block = false;
-							in_unit = true;
-							filename = xmlsr.getAttributeValue(1);
-						}
-						if(xmlsr.getLocalName().equals("class") ){
-							in_class = true;
-						}
-						if(in_class && xmlsr.getLocalName().equals("name")){
-							in_class_name = true;
-						}
-						if(in_unit && xmlsr.getLocalName().equals("package")){
-							in_package = true;
-						}
-						if(in_package && xmlsr.getLocalName().equals("name")){
-							in_package_name = true;
-						}
-						if(xmlsr.getLocalName().equals("block")){
-							in_block = true;
-						}
-	
+				case XMLEvent.START_ELEMENT:
+					if (xmlsr.getLocalName().equals("unit")) {
+						in_block = false;
+						in_unit = true;
+						filename = xmlsr.getAttributeValue(1);
+					}
+					if (xmlsr.getLocalName().equals("class")) {
+						in_class = true;
+					}
+					if (in_class && xmlsr.getLocalName().equals("name")) {
+						in_class_name = true;
+					}
+					if (in_unit && xmlsr.getLocalName().equals("package")) {
+						in_package = true;
+					}
+					if (in_package && xmlsr.getLocalName().equals("name")) {
+						in_package_name = true;
+					}
+					if (xmlsr.getLocalName().equals("block")) {
+						in_block = true;
+					}
+
 					break;
-					case XMLEvent.CHARACTERS:
-						if(in_class){
-							if(!xmlsr.getText().equals(typeName)){
-								type = xmlsr.getText().trim();
-							}
+				case XMLEvent.CHARACTERS:
+					if (in_class) {
+						if (!xmlsr.getText().equals(typeName)) {
+							type = xmlsr.getText().trim();
 						}
-						if(in_class && in_class_name){
-							in_class_name = false;
-							class_name = xmlsr.getText();
-							if(class_name.equals(typeName)&& !in_block){
-								stop = true;
-							}
+					}
+					if (in_class && in_class_name) {
+						in_class_name = false;
+						class_name = xmlsr.getText();
+						if (class_name.equals(typeName) && !in_block) {
+							stop = true;
 						}
-						if(in_package && in_package_name){
-							in_package_name = false;
-							package_name.add(xmlsr.getText());
-						}
+					}
+					if (in_package && in_package_name) {
+						in_package_name = false;
+						package_name.add(xmlsr.getText());
+					}
 					break;
-					case XMLEvent.END_ELEMENT:
-						if(xmlsr.getLocalName().equals("package")){
-							in_package = false;
-							in_package_name = false;
+				case XMLEvent.END_ELEMENT:
+					if (xmlsr.getLocalName().equals("package")) {
+						in_package = false;
+						in_package_name = false;
+					}
+					if (xmlsr.getLocalName().equals("unit")) {
+						if (!class_name.equals(typeName)) {
+							package_name.clear();
 						}
-						if(xmlsr.getLocalName().equals("unit")){
-							if(!class_name.equals(typeName)){
-								package_name.clear();
-							}
-						}
+					}
 					break;
 				}
 			}
-			
-			
-		}catch (XMLStreamException e) {
+
+		} catch (XMLStreamException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		if(stop){
-			String res ="";
-			for(String s : package_name){
-				res += s+".";
+		if (stop) {
+			String res = "";
+			for (String s : package_name) {
+				res += s + ".";
 			}
-			TypeKind kind = null ; 
-			switch(type){
-				case "class":
-					kind = TypeKind.CLASS;
+			TypeKind kind = null;
+			switch (type) {
+			case "class":
+				kind = TypeKind.CLASS;
 				break;
-				case "interface":
-					kind = TypeKind.INTERFACE;
+			case "interface":
+				kind = TypeKind.INTERFACE;
 				break;
-				case "enum":
-					kind = TypeKind.ENUM;
-					break;
+			case "enum":
+				kind = TypeKind.ENUM;
+				break;
 			}
-			return new TypeImpl(class_name,res,kind,new LocationImpl(filename));
-		}else{
+			return new TypeImpl(class_name, res, kind, new LocationImpl(
+					filename));
+		} else {
 			return null;
 		}
 	}
@@ -140,14 +143,14 @@ public class CodeSearchEngineInputStreamImpl implements
 				int eventType = xmlsr.next();
 				// Analyze each beacon
 				switch (eventType) {
-					case XMLEvent.START_ELEMENT:
-						break;
-					case XMLEvent.CHARACTERS:
-						break;
-					case XMLEvent.END_ELEMENT:
-						break;
-					default:
-						break;
+				case XMLEvent.START_ELEMENT:
+					break;
+				case XMLEvent.CHARACTERS:
+					break;
+				case XMLEvent.END_ELEMENT:
+					break;
+				default:
+					break;
 				}
 			}
 
@@ -238,6 +241,8 @@ public class CodeSearchEngineInputStreamImpl implements
 				// Class found
 				if (classFound) {
 
+					SAXBuilder builder = new SAXBuilder();
+
 					// DEBUG
 					// System.out.println("Class match - Line : "
 					// + xmlsr.getLocation().getLineNumber());
@@ -271,60 +276,93 @@ public class CodeSearchEngineInputStreamImpl implements
 						// method found (function)
 						MethodImpl method = new MethodImpl();
 
-						// looking for function.type
-						if ((eventType = xmlsr.next()) != XMLEvent.START_ELEMENT) {
-							// TODO throw custom exception
-							throw new RuntimeException(
-									"Malformed file. '<type>' was expected.");
-						}
-
-						// type found
-						TypeImpl type = new TypeImpl("", "", null, null);
-
-						// looking for function.type.name
-						while (xmlsr.hasNext()) {
-							eventType = xmlsr.next();
-
-							if (eventType == XMLEvent.START_ELEMENT
-									&& xmlsr.getLocalName().equals("name")) {
-								break;
-							}
-						}
-
-						String typeNameBuilder = "";
+						// Build a DOM string
+						String builderDOMStructure = "<root>";
 						while (xmlsr.hasNext()) {
 							eventType = xmlsr.next();
 
 							if (eventType == XMLEvent.END_ELEMENT
-									&& xmlsr.getLocalName().equals("type")) {
+									&& xmlsr.getLocalName().matches(
+											"^function[_A-Za-z]*$")) {
 								break;
 							}
-							if (eventType == XMLEvent.CHARACTERS) {
-								typeNameBuilder += xmlsr.getText();
+
+							// build ur DOM string
+							switch (eventType) {
+							case XMLEvent.START_ELEMENT:
+								builderDOMStructure += "<"
+										+ xmlsr.getLocalName() + ">";
+								break;
+							case XMLEvent.END_ELEMENT:
+								builderDOMStructure += "</"
+										+ xmlsr.getLocalName() + ">";
+								break;
+
+							case XMLEvent.CHARACTERS:
+								String text = xmlsr.getText();
+								switch (text) {
+								case "<":
+									builderDOMStructure += "&lt;";
+									break;
+								case ">":
+									builderDOMStructure += "&gt;";
+									break;
+
+								default:
+									builderDOMStructure += text;
+									break;
+								}
+
+								break;
+
+							default:
+
+								break;
+							}
+
+							if (eventType == XMLEvent.END_ELEMENT
+									&& xmlsr.getLocalName().equals(
+											"parameter_list")) {
+								break;
 							}
 						}
 
-						// Set the return type name of the method
-						type.setName(typeNameBuilder.replace("&lt;", "<")
-								.replace("&gt;", ">").trim());
-						method.setType(type);
+						builderDOMStructure += "</root>";
+						System.err.println(builderDOMStructure);
 
-						// skip spaces
-						while (xmlsr.hasNext()
-								&& eventType != XMLEvent.START_ELEMENT) {
-							eventType = xmlsr.next();
-						}
+						// Build DOM Structure from string
+						InputStream inputStreamDOM = new ByteArrayInputStream(
+								builderDOMStructure.getBytes());
 
-						if (!xmlsr.getLocalName().equals("name")) {
-							// TODO throw custom exception
-							throw new RuntimeException(
-									"Malformed file. '<name>' was expected.");
-						}
+						try {
+							Document document = (Document) builder
+									.build(inputStreamDOM);
+							Element rootNode = document.getRootElement();
 
-						// name found
-						eventType = xmlsr.next();
-						if (eventType == XMLEvent.CHARACTERS) {
-							method.setName(xmlsr.getText());
+							log.debug(rootNode.toString());
+
+							// now we can build ur method object
+
+							// Type
+							TypeImpl type = new TypeImpl();
+							Element name = rootNode.getChild("type").getChild(
+									"name");
+							if (name.getChildren().size() > 0) {
+								type.setName(name.getChildText("name"));
+							} else {
+								type.setName(name.getText());
+							}
+							method.setType(type);
+
+							// Name
+							method.setName(rootNode.getChildText("name"));
+
+							// Parameters
+
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						} catch (JDOMException e) {
+							throw new RuntimeException(e);
 						}
 
 						listMethod.add(method);
@@ -340,7 +378,7 @@ public class CodeSearchEngineInputStreamImpl implements
 	}
 
 	/**
-	 * @author Julien Duribreux 
+	 * @author Julien Duribreux
 	 */
 	@Override
 	public List<Method> findMethodsReturning(String typeName, InputStream data) {
