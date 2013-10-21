@@ -1,6 +1,7 @@
 package main.java.fr.idl;
 
 import main.java.fr.idl.CodeSearchEngine.Location;
+import main.java.fr.idl.CodeSearchEngine.Type;
 
 public class LocationImpl implements Location {
 
@@ -19,5 +20,10 @@ public class LocationImpl implements Location {
 		// TODO Auto-generated method stub
 		return 0;
 	}
+	@Override
+	public boolean equals(Object obj) {
+		Location other = (LocationImpl) obj;
 
+		return this.path.equals(other.getFilePath());
+	}
 }
