@@ -27,15 +27,16 @@ public class Main {
 			System.out.println("Total file size to read (in bytes) : "
 					+ fis.available());
 
-			double start = System.currentTimeMillis();
 			CodeSearchEngineInputStreamImpl oneShot = new CodeSearchEngineInputStreamImpl();
 
-			// Call methods returning type + print
+			// Call methods returning type + print + timer
+			double start = System.currentTimeMillis();
 			List<Method> l = oneShot.findMethodsReturning("void", fis);
+			double end = System.currentTimeMillis();
+			
 			for (Method m : l) {
 				System.out.println(m);
 			}
-			double end = System.currentTimeMillis();
 			System.out.println("Time : " + (end-start) + "ms");
 			
 		} catch (IOException e) {

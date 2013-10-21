@@ -195,10 +195,12 @@ public class CodeSearchEngineInputStreamImpl implements
 		boolean name = false;
 		boolean inPackage = false;
 		boolean inPackageName = false;
+		boolean inUnit = false;
 		
 		boolean typeOK = false;
 		boolean nameOK = false;
 		
+		String pathValue = "";
 		String typeValue = ""; // Returning type
 		String nameValue = ""; // Method name
 		String packageValue = "";
@@ -212,6 +214,10 @@ public class CodeSearchEngineInputStreamImpl implements
 				switch (eventType) {
 					case XMLEvent.START_ELEMENT :
 						// Trace where we are
+						if (xmlsr.getLocalName().equals("unit")) {
+							pathValue = xmlsr.getAttributeValue(1);
+							inUnit = !inUnit;
+						}
 						if (xmlsr.getLocalName().equals("function"))
 							function = !function;
 						if (xmlsr.getLocalName().equals("type"))
@@ -254,7 +260,7 @@ public class CodeSearchEngineInputStreamImpl implements
 								// Get Kind
 								TypeKind kindValue = TypeKind.CLASS ;
 								// Get Location
-								Location locationValue = new LocationImpl();
+								Location locationValue = new LocationImpl(pathValue);
 								// Create Method
 								MethodImpl method = new MethodImpl(nameValue,
 										new TypeImpl(typeValue, packageValue,
@@ -269,6 +275,8 @@ public class CodeSearchEngineInputStreamImpl implements
 							typeValue = "";
 							nameValue = "";
 						}
+						if (xmlsr.getLocalName().equals("unit"))
+							inUnit = !inUnit;
 						if (xmlsr.getLocalName().equals("type"))
 							type = !type;
 						if (xmlsr.getLocalName().equals("name"))

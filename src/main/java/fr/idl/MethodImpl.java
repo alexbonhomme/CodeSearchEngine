@@ -87,6 +87,6 @@ public class MethodImpl implements Method {
 	}
 
 	public String toString() {
-		return this.type.toString() + "Name\t"+this.name + "\n";
+		return this.type.toString() + "MethodName\t"+this.name + "\n";
 	}
 }

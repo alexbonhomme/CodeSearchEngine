@@ -4,10 +4,14 @@ import main.java.fr.idl.CodeSearchEngine.Location;
 
 public class LocationImpl implements Location {
 
+	String path ;
+	
+	public LocationImpl(String path) {
+		this.path = path ;
+	}
 	@Override
 	public String getFilePath() {
-		// TODO Auto-generated method stub
-		return null;
+		return this.path ;
 	}
 
 	@Override
