@@ -92,7 +92,7 @@ public class TypeImpl implements Type {
 				&& this.fullyQualifiedPackageName.equals(other
 						.getFullyQualifiedPackageName())
 				&& this.declaration.equals(other.getDeclaration())
-				&& this.kind.equals(other.getKind());
+				&& this.kind == other.getKind();
 	}
 
 }
