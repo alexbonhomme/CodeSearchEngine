@@ -781,43 +781,42 @@ public class CodeSearchEngineInputStreamImpl implements
 						continue;
 					}
 
-					// found a new
-					while (xmlsr.hasNext()) {
-						eventType = xmlsr.next();
-
-						// looking for <name>
-						if (eventType == XMLEvent.START_ELEMENT
-								&& xmlsr.getLocalName().equals("name")) {
-							break;
-						}
-					}
-
-					String instancedClassName = "";
 					eventType = xmlsr.next();
-					switch (eventType) {
-					case XMLEvent.CHARACTERS:
-						instancedClassName = xmlsr.getText();
-						break;
 
-					case XMLEvent.START_ELEMENT:
+					// Build a DOM string
+					String builderDOMStructure = "";
+					if (xmlsr.getLocalName().equals("class")) {
+						// get <super>
 						eventType = xmlsr.next();
-						if (eventType == XMLEvent.CHARACTERS) {
-							instancedClassName = xmlsr.getText();
-						} else {
-							// XXX
-							log.error(xmlsr.getLocalName());
-							// throw new RuntimeException(
-							// "Malformed file. Except : CHARACTERS");
-						}
-						break;
 
-					default:
-						throw new RuntimeException(
-								"Malformed file. Except : <name>...");
+						builderDOMStructure = Util.builDOMStructureString(
+								xmlsr, xmlsr.getLocalName());
+					} else {
+						builderDOMStructure = Util.builDOMStructureString(
+								xmlsr, xmlsr.getLocalName());
 					}
 
-					if (instancedClassName.equals(className)) {
-						listOfNew.add(loc);
+					log.trace(builderDOMStructure);
+
+					// Build DOM Structure from string
+					InputStream inputStreamDOM = new ByteArrayInputStream(
+							builderDOMStructure.getBytes());
+
+					try {
+						Document document = (Document) builder
+								.build(inputStreamDOM);
+						Element rootNode = document.getRootElement();
+
+						String instancedClassName = Util.getFullName(rootNode
+								.getChild("name"));
+						if (instancedClassName.equals(className)) {
+							listOfNew.add(loc);
+						}
+
+					} catch (IOException e) {
+						throw new RuntimeException(e);
+					} catch (JDOMException e) {
+						throw new RuntimeException(e);
 					}
 
 				}
@@ -825,6 +824,8 @@ public class CodeSearchEngineInputStreamImpl implements
 		} catch (XMLStreamException e) {
 			throw new RuntimeException(e);
 		}
+
+		log.debug(listOfNew.size());
 
 		return listOfNew;
 	}
