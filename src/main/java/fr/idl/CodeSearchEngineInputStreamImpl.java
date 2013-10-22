@@ -955,8 +955,56 @@ public class CodeSearchEngineInputStreamImpl implements
 
 	@Override
 	public List<Location> findCastsTo(String typeName, InputStream data) {
-		// TODO Auto-generated method stub
-		return null;
+		ArrayList<Location> listOfCast = new ArrayList<>();
+
+		Location loc = new LocationImpl("");
+		String pathValue = "";
+
+		XMLInputFactory xmlif = XMLInputFactory.newInstance();
+
+		XMLStreamReader xmlsr;
+		try {
+			xmlsr = xmlif.createXMLStreamReader(data);
+
+			while (xmlsr.hasNext()) {
+				int eventType = xmlsr.next();
+
+				if (eventType == XMLEvent.START_ELEMENT
+						&& xmlsr.getLocalName().equals("unit")) {
+					pathValue = xmlsr.getAttributeValue(1);
+				}
+
+				if (eventType == XMLEvent.CHARACTERS
+						&& xmlsr.getText().equals("(")) {
+					eventType = xmlsr.next();
+					if (eventType == XMLEvent.START_ELEMENT
+							&& xmlsr.getLocalName().equals("name")) {
+						eventType = xmlsr.next();
+						if (eventType == XMLEvent.CHARACTERS
+								&& xmlsr.getText().equals(typeName)) {
+							eventType = xmlsr.next();
+							if (eventType == XMLEvent.END_ELEMENT
+									&& xmlsr.getLocalName().equals("name")) {
+								eventType = xmlsr.next();
+								if (eventType == XMLEvent.CHARACTERS
+										&& xmlsr.getText().matches("\\).*")) {
+									loc = new LocationImpl(pathValue);
+									listOfCast.add(loc);
+
+								}
+							}
+						}
+
+					}
+				}
+
+			}
+		} catch (XMLStreamException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return listOfCast;
 	}
 
 	@Override
