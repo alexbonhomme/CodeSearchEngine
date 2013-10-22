@@ -23,29 +23,13 @@ public class Util {
 	 * @return
 	 */
 	public static String getFullName(Element nameNode) {
-		List nameComponents = nameNode.getChildren();
+		List<Element> nameComponents = nameNode.getChildren();
 
 		if (nameComponents.size() == 0) {
 			return nameNode.getText();
 		} else {
 			return nameNode.getChildText("name");
 		}
-
-		// String nameBuilder = "";
-		// for (Iterator nameCompIterator = nameComponents.iterator();
-		// nameCompIterator.hasNext();) {
-		// Element nameComponent = (Element) nameCompIterator.next();
-		//
-		// if (nameComponent.getChildren().size() > 0) {
-		// nameBuilder += getFullName(nameComponent);
-		// } else {
-		// nameBuilder += nameComponent.getText();
-		// }
-		//
-		// System.err.println(nameComponents.toString());
-		// }
-		//
-		// return nameBuilder;
 	}
 
 	/**
@@ -55,7 +39,6 @@ public class Util {
 	 * @return
 	 * @throws XMLStreamException
 	 */
-	// TODO check deeper of 'regexEndParsing'
 	public static String builDOMStructureString(XMLStreamReader xmlsr,
 			String regexEndParsing) throws XMLStreamException {
 		int deepLevel = 0;
@@ -105,7 +88,6 @@ public class Util {
 	 * @return
 	 * @throws XMLStreamException
 	 */
-	// TODO used 'builDOMStructureString'
 	public static String builDOMMethodStructureString(XMLStreamReader xmlsr)
 			throws XMLStreamException {
 		int deepLevel = 0;
@@ -172,8 +154,9 @@ public class Util {
 
 		// Parameters
 		ArrayList<Type> parameters = new ArrayList<Type>();
-		for (Iterator paramIterator = methodNode.getChild("parameter_list")
-				.getChildren("param").iterator(); paramIterator.hasNext();) {
+		for (Iterator<Element> paramIterator = methodNode
+				.getChild("parameter_list").getChildren("param").iterator(); paramIterator
+				.hasNext();) {
 			Element node = (Element) paramIterator.next();
 
 			Element typeNameNode = node.getChild("decl").getChild("type")
