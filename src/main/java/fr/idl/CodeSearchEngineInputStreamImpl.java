@@ -15,8 +15,6 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.events.XMLEvent;
 
-import main.java.fr.idl.CodeSearchEngine.Location;
-
 import org.apache.log4j.Logger;
 import org.jdom2.Document;
 import org.jdom2.Element;
@@ -106,11 +104,10 @@ public class CodeSearchEngineInputStreamImpl implements
 					break;
 				}
 			}
-
 		} catch (XMLStreamException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw new RuntimeException(e);
 		}
+
 		if (stop) {
 			String res = "";
 			for (String s : package_name) {
@@ -131,7 +128,7 @@ public class CodeSearchEngineInputStreamImpl implements
 			return new TypeImpl(class_name, res, kind, new LocationImpl(
 					filename));
 		} else {
-			return null;
+			return new TypeImpl();
 		}
 	}
 
@@ -159,7 +156,7 @@ public class CodeSearchEngineInputStreamImpl implements
 		String packageValue = "";
 
 		boolean inType = false;
-		
+
 		XMLInputFactory xmlif = XMLInputFactory.newInstance();
 		try {
 			XMLStreamReader xmlsr = xmlif.createXMLStreamReader(data);
@@ -175,7 +172,8 @@ public class CodeSearchEngineInputStreamImpl implements
 						extendsValue = ""; // reset
 						classValue = "";
 						inClass = true;
-					} else if (xmlsr.getLocalName().equals("extends") && inClass)
+					} else if (xmlsr.getLocalName().equals("extends")
+							&& inClass)
 						inExtends = true;
 					else if (xmlsr.getLocalName().equals("name") && inExtends)
 						inExtendsName = true;
@@ -185,7 +183,7 @@ public class CodeSearchEngineInputStreamImpl implements
 						inPackage = true;
 						packageValue = ""; // Reset
 					} else if (xmlsr.getLocalName().equals("type")) {
-						inType = true ;
+						inType = true;
 					}
 					if (inPackage && xmlsr.getLocalName().equals("name"))
 						inPackageName = true;
@@ -214,8 +212,10 @@ public class CodeSearchEngineInputStreamImpl implements
 					} else if (xmlsr.getLocalName().equals("class")) {
 						inClass = false;
 					} else if (xmlsr.getLocalName().equals("type")) {
-						inType = false ;
-					} else if (xmlsr.getLocalName().equals("extends") && !inType && !typeName.equals("") && !extendsValue.equals("")) {
+						inType = false;
+					} else if (xmlsr.getLocalName().equals("extends")
+							&& !inType && !typeName.equals("")
+							&& !extendsValue.equals("")) {
 						inExtends = false;
 						// Get Location
 						Location locationValue = new LocationImpl(pathValue);
@@ -224,10 +224,11 @@ public class CodeSearchEngineInputStreamImpl implements
 								TypeKind.CLASS, locationValue);
 
 						// Ajout hashMap
-						 if (!hashExtends.containsKey(extendsValue)) {
-							 hashExtends.put(extendsValue, new ArrayList<Type>());
-						 }
-						 hashExtends.get(extendsValue).add(type);
+						if (!hashExtends.containsKey(extendsValue)) {
+							hashExtends
+									.put(extendsValue, new ArrayList<Type>());
+						}
+						hashExtends.get(extendsValue).add(type);
 
 						// Got all the informations we need
 						if (extendsValue.equals(typeName)) {
@@ -252,23 +253,23 @@ public class CodeSearchEngineInputStreamImpl implements
 
 		// Analyze if there is some level of Exception
 		Queue<Type> tampon = new LinkedList<Type>();
-		
-	 	// Copy
+
+		// Copy
 		if (!hashExtends.containsKey(typeName))
 			return listType;
-		
+
 		tampon.addAll(hashExtends.get(typeName));
-		
-	 	while (tampon.size() != 0) {
-	 		Type head = tampon.poll();
-	 		if (hashExtends.containsKey(head.getName())) {
-	 			for (Type t : hashExtends.get(head.getName()))
-	 				tampon.offer(t);
-	 			listType.add(head);
-	 		}
-	 	}
-	 	
-	 	return listType ;
+
+		while (tampon.size() != 0) {
+			Type head = tampon.poll();
+			if (hashExtends.containsKey(head.getName())) {
+				for (Type t : hashExtends.get(head.getName()))
+					tampon.offer(t);
+				listType.add(head);
+			}
+		}
+
+		return listType;
 	}
 
 	@Override
@@ -395,22 +396,19 @@ public class CodeSearchEngineInputStreamImpl implements
 			}
 
 		} catch (XMLStreamException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw new RuntimeException(e);
 		}
 		return listfield;
 	}
 
 	@Override
 	public List<Location> findAllReadAccessesOf(Field field, InputStream data) {
-		// TODO Auto-generated method stub
-		return null;
+		return Collections.emptyList();
 	}
 
 	@Override
 	public List<Location> findAllWriteAccessesOf(Field field, InputStream data) {
-		// TODO Auto-generated method stub
-		return null;
+		return Collections.emptyList();
 	}
 
 	/**
@@ -499,13 +497,13 @@ public class CodeSearchEngineInputStreamImpl implements
 						}
 
 						// DEBUG
-						log.debug("Method match - Line : "
-								+ xmlsr.getLocation().getLineNumber());
+						// log.debug("Method match - Line : "
+						// + xmlsr.getLocation().getLineNumber());
 
 						// Build a DOM string
 						String builderDOMStructure = Util
 								.builDOMMethodStructureString(xmlsr);
-						log.trace(builderDOMStructure);
+						// log.trace(builderDOMStructure);
 
 						// Build DOM Structure from string
 						InputStream inputStreamDOM = new ByteArrayInputStream(
@@ -651,7 +649,8 @@ public class CodeSearchEngineInputStreamImpl implements
 	}
 
 	@Override
-	public List<Method> findMethodsTakingAsParameter(String typeName, InputStream data) {
+	public List<Method> findMethodsTakingAsParameter(String typeName,
+			InputStream data) {
 		List<Method> listMethod = new ArrayList<Method>();
 
 		boolean function = false;
@@ -665,7 +664,7 @@ public class CodeSearchEngineInputStreamImpl implements
 		boolean inUnit = false;
 
 		boolean typeOK = false;
-//		boolean nameOK = false;
+		// boolean nameOK = false;
 
 		String pathValue = "";
 		String typeValue = ""; // Returning type
@@ -706,8 +705,9 @@ public class CodeSearchEngineInputStreamImpl implements
 					break;
 				case XMLEvent.CHARACTERS:
 					// Extract the return type
-					if (function && parameter_list && param && decl && type && name) {
-						if (xmlsr.getText().equals(typeName)){
+					if (function && parameter_list && param && decl && type
+							&& name) {
+						if (xmlsr.getText().equals(typeName)) {
 							typeOK = true;
 						}
 					}
@@ -716,8 +716,9 @@ public class CodeSearchEngineInputStreamImpl implements
 					if (function && !type && name) {
 						nameValue = xmlsr.getText();
 					}
-					
-					if (function && type && name && !parameter_list && (xmlsr.getText() != ">")) {
+
+					if (function && type && name && !parameter_list
+							&& (xmlsr.getText() != ">")) {
 						typeValue = xmlsr.getText();
 					}
 
@@ -728,8 +729,7 @@ public class CodeSearchEngineInputStreamImpl implements
 						else
 							packageValue += "." + xmlsr.getText();
 					}
-					
-					
+
 					if (typeOK) {
 						// Get Kind
 						TypeKind kindValue = TypeKind.CLASS;
@@ -768,7 +768,6 @@ public class CodeSearchEngineInputStreamImpl implements
 					break;
 				}
 			}
-
 		} catch (XMLStreamException e) {
 			throw new RuntimeException(e);
 		}
@@ -802,7 +801,7 @@ public class CodeSearchEngineInputStreamImpl implements
 				// Build a DOM string
 				String builderDOMStructure = Util
 						.builDOMMethodStructureString(xmlsr);
-				log.trace(builderDOMStructure);
+				// log.trace(builderDOMStructure);
 
 				// Build DOM Structure from string
 				InputStream inputStreamDOM = new ByteArrayInputStream(
@@ -821,7 +820,7 @@ public class CodeSearchEngineInputStreamImpl implements
 					}
 
 					// method found
-					log.debug(name);
+					// log.debug(name);
 					listMethods.add(Util.buildMethodFromDOM(rootNode));
 
 				} catch (IOException e) {
@@ -837,9 +836,6 @@ public class CodeSearchEngineInputStreamImpl implements
 		return listMethods;
 	}
 
-	/**
-	 * @author Alexandre Bonhomme
-	 */
 	@Override
 	public List<Method> findOverridingMethodsOf(Method method, InputStream data) {
 		return Collections.emptyList();
@@ -915,7 +911,7 @@ public class CodeSearchEngineInputStreamImpl implements
 								xmlsr, xmlsr.getLocalName());
 					}
 
-					log.trace(builderDOMStructure);
+					// log.trace(builderDOMStructure);
 
 					// Build DOM Structure from string
 					InputStream inputStreamDOM = new ByteArrayInputStream(
@@ -926,7 +922,7 @@ public class CodeSearchEngineInputStreamImpl implements
 								.build(inputStreamDOM);
 						Element rootNode = document.getRootElement();
 
-						log.trace(rootNode.getChildren());
+						// log.trace(rootNode.getChildren());
 						Element nameNode = rootNode.getChild("name");
 
 						String instancedClassName = "";
@@ -952,7 +948,7 @@ public class CodeSearchEngineInputStreamImpl implements
 			throw new RuntimeException(e);
 		}
 
-		log.debug(listOfNew.size());
+		// log.debug(listOfNew.size());
 
 		return listOfNew;
 	}
@@ -965,73 +961,72 @@ public class CodeSearchEngineInputStreamImpl implements
 
 	@Override
 	public List<Location> findInstanceOf(String typeName, InputStream data) {
-		// TODO Auto-generated method stub
-		return null;
+		return Collections.emptyList();
 	}
 
 	@Override
 	public List<CodeSearchEngine.Method> findMethodsThrowing(
 			String exceptionName, InputStream data) {
-		// TODO Auto-generated method stub
-		return null;
+		return Collections.emptyList();
 	}
 
 	@Override
 	public List<Location> findCatchOf(String exceptionName, InputStream data) {
 		XMLInputFactory xmlif = XMLInputFactory.newInstance();
 		XMLStreamReader xmlsr;
-		String path = "" ;
+		String path = "";
 		List<Location> listLoc = new ArrayList<Location>();
 		boolean in_class = false;
 		boolean in_class_catch = false;
 		boolean in_class_catch_name = false;
 		boolean detect_exception = false;
-		
+
 		try {
 			xmlsr = xmlif.createXMLStreamReader(data);
 			while (xmlsr.hasNext()) {
 				int eventType = xmlsr.next();
 				switch (eventType) {
-					case XMLEvent.START_ELEMENT :
-						if(xmlsr.getLocalName().equals("unit")){
-							path = xmlsr.getAttributeValue(1);
-						}
-						if(xmlsr.getLocalName().equals("class")){
-							in_class = true;
-						}
-						if(in_class && xmlsr.getLocalName().equals("catch")){
-							in_class_catch = true;
-						}
-						if(in_class && in_class_catch && xmlsr.getLocalName().equals("name")){
-							in_class_catch_name = true;
-						}
+				case XMLEvent.START_ELEMENT:
+					if (xmlsr.getLocalName().equals("unit")) {
+						path = xmlsr.getAttributeValue(1);
+					}
+					if (xmlsr.getLocalName().equals("class")) {
+						in_class = true;
+					}
+					if (in_class && xmlsr.getLocalName().equals("catch")) {
+						in_class_catch = true;
+					}
+					if (in_class && in_class_catch
+							&& xmlsr.getLocalName().equals("name")) {
+						in_class_catch_name = true;
+					}
 					break;
-					
-					case XMLEvent.CHARACTERS:
-						if(in_class && in_class_catch && in_class_catch_name){
-							//System.out.println(xmlsr.getText());
-							if(xmlsr.getText().equals(exceptionName)){
-								detect_exception = true;
-							}
-							in_class_catch_name = false;
-							in_class_catch = false;
+
+				case XMLEvent.CHARACTERS:
+					if (in_class && in_class_catch && in_class_catch_name) {
+						if (xmlsr.getText().equals(exceptionName)) {
+							detect_exception = true;
 						}
+						in_class_catch_name = false;
+						in_class_catch = false;
+					}
 					break;
-					
-					case XMLEvent.END_ELEMENT:
-						if(xmlsr.getLocalName().equals("catch") && detect_exception){
-							listLoc.add(new LocationImpl(path));
-							in_class = false;
-							in_class_catch = false;
-							in_class_catch_name = false;
-							detect_exception = false;
-							path = "" ;
-						}
+
+				case XMLEvent.END_ELEMENT:
+					if (xmlsr.getLocalName().equals("catch")
+							&& detect_exception) {
+						listLoc.add(new LocationImpl(path));
+						in_class = false;
+						in_class_catch = false;
+						in_class_catch_name = false;
+						detect_exception = false;
+						path = "";
+					}
 					break;
 				}
 			}
 		} catch (XMLStreamException e) {
-			System.err.println(e.getMessage());
+			throw new RuntimeException(e);
 		}
 		return listLoc;
 	}
@@ -1039,8 +1034,7 @@ public class CodeSearchEngineInputStreamImpl implements
 	@Override
 	public List<Type> findClassesAnnotatedWith(String annotationName,
 			InputStream data) {
-		// TODO Auto-generated method stub
-		return null;
+		return Collections.emptyList();
 	}
 
 }
