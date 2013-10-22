@@ -137,9 +137,14 @@ public class CodeSearchEngineInputStreamImplTest {
 				.getFullyQualifiedPackageName());
 	}
 
+	
+	
 	@Test
-	public void testFindMethodsTakingAsParameter() {
-		fail("Not yet implemented");
+	public void findMethodsTakingAsParameter() {
+		List<Method> methods = cse.findMethodsTakingAsParameter("int", data);
+		assertEquals("peek", methods.get(0).getName());
+		assertEquals("E", methods.get(0).getType().getName());
+		assertEquals("org.apache.commons.collections", methods.get(0).getType().getFullyQualifiedPackageName());
 	}
 
 	@Test
