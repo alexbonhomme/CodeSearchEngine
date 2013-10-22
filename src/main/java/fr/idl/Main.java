@@ -7,6 +7,7 @@ import java.util.List;
 
 import javax.xml.xpath.XPathExpressionException;
 
+import main.java.fr.idl.CodeSearchEngine.Location;
 import main.java.fr.idl.CodeSearchEngine.Method;
 import main.java.fr.idl.CodeSearchEngine.Type;
 
@@ -32,10 +33,10 @@ public class Main {
 
 			// Call methods returning type + print + timer
 			double start = System.currentTimeMillis();
-			List<Method> l = oneShot.findMethodsTakingAsParameter ("Bag", fis);
+			List<Type> l = oneShot.findSubTypesOf("RuntimeException", fis);
 			double end = System.currentTimeMillis();
-			for (Method t : l) {
-				System.out.println(t.getName());
+			for (Type t : l) {
+				System.out.println(t.toString());
 			}
 			String res ;
 			if (l.size() > 1) res = " results" ; else res = " result";
