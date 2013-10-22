@@ -29,7 +29,7 @@ public class CodeSearchEngineInputStreamImplTest {
 	@Before
 	public void testSetup() throws FileNotFoundException {
 		// TODO mettre un lien relatif
-		data = new FileInputStream(new File("xml/commons-collections.xml"));
+		data = new FileInputStream(new File("xml/all.xml"));
 		cse = new CodeSearchEngineInputStreamImpl();
 	}
 
@@ -161,16 +161,19 @@ public class CodeSearchEngineInputStreamImplTest {
 		assertNotEquals(0, listNewOf.size());
 
 		// 1858
-		assertEquals(listNewOf.get(0).getFilePath(),
-				"dataset-src/org/apache/commons/collections/CollectionUtils.java");
+		assertEquals(
+				"dataset-src/org/apache/commons/collections/CollectionUtils.java",
+				listNewOf.get(0).getFilePath());
 
 		// 3353
-		assertEquals(listNewOf.get(6).getFilePath(),
-				"dataset-src/org/apache/commons/collections/EnumerationUtils.java");
+		assertEquals(
+				"dataset-src/org/apache/commons/collections/EnumerationUtils.java",
+				listNewOf.get(6).getFilePath());
 
 		// 3554
-		assertEquals(listNewOf.get(7).getFilePath(),
-				"dataset-src/org/apache/commons/collections/ExtendedProperties.java");
+		assertEquals(
+				"dataset-src/org/apache/commons/collections/ExtendedProperties.java",
+				listNewOf.get(7).getFilePath());
 
 	}
 

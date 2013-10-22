@@ -11,6 +11,7 @@ import javax.xml.stream.events.XMLEvent;
 import main.java.fr.idl.CodeSearchEngine.Method;
 import main.java.fr.idl.CodeSearchEngine.Type;
 
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.jdom2.Element;
 
 public class Util {
@@ -45,18 +46,6 @@ public class Util {
 		// }
 		//
 		// return nameBuilder;
-	}
-
-	public static String escapeSpecialsCaract(String text) {
-		switch (text) {
-		case "<":
-			return "&lt;";
-		case ">":
-			return "&gt;";
-
-		default:
-			return text;
-		}
 	}
 
 	/**
@@ -96,7 +85,7 @@ public class Util {
 				break;
 
 			case XMLEvent.CHARACTERS:
-				builderDOMStructure += Util.escapeSpecialsCaract(xmlsr
+				builderDOMStructure += StringEscapeUtils.escapeXml(xmlsr
 						.getText());
 				break;
 
@@ -146,7 +135,7 @@ public class Util {
 				break;
 
 			case XMLEvent.CHARACTERS:
-				builderDOMStructure += Util.escapeSpecialsCaract(xmlsr
+				builderDOMStructure += StringEscapeUtils.escapeXml(xmlsr
 						.getText());
 				break;
 

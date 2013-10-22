@@ -752,7 +752,7 @@ public class CodeSearchEngineInputStreamImpl implements
 				}
 
 				// found a .java file
-				Location loc = null;// XXX Dirty
+				Location loc = new LocationImpl("");
 				for (int i = 0; i < xmlsr.getAttributeCount(); i++) {
 					if (xmlsr.getAttributeLocalName(i).equals("filename")) {
 						loc = new LocationImpl(xmlsr.getAttributeValue(i));
@@ -807,8 +807,16 @@ public class CodeSearchEngineInputStreamImpl implements
 								.build(inputStreamDOM);
 						Element rootNode = document.getRootElement();
 
-						String instancedClassName = Util.getFullName(rootNode
-								.getChild("name"));
+						log.trace(rootNode.getChildren());
+						Element nameNode = rootNode.getChild("name");
+
+						String instancedClassName = "";
+						if (nameNode == null) {
+							instancedClassName = rootNode.getText();
+						} else {
+							instancedClassName = Util.getFullName(nameNode);
+						}
+
 						if (instancedClassName.equals(className)) {
 							listOfNew.add(loc);
 						}
