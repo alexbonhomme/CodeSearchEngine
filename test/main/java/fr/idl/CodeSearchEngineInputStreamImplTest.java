@@ -194,7 +194,10 @@ public class CodeSearchEngineInputStreamImplTest {
 
 	@Test
 	public void testFindCatchOf() {
-		fail("Not yet implemented");
+		List<Location> listLoc = cse.findCatchOf("IOException", data);
+		assertEquals(2, listLoc.size());
+		assertEquals("dataset-src/org/apache/commons/collections/ExtendedProperties.java",listLoc.get(0).getFilePath());
+		assertEquals("dataset-src/org/apache/commons/collections/functors/PrototypeFactory.java",listLoc.get(1).getFilePath());
 	}
 
 }
