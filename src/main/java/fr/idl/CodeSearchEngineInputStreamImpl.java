@@ -6,7 +6,9 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
@@ -137,7 +139,7 @@ public class CodeSearchEngineInputStreamImpl implements
 	@Override
 	public List<Type> findSubTypesOf(String typeName, InputStream data) {
 		List<Type> listType = new ArrayList<Type>();
-		HashMap<String, List<Type>> hashExceptions = new HashMap<String, List<Type>>();
+		HashMap<String, List<Type>> hashExtends = new HashMap<String, List<Type>>();
 
 		boolean inExtends = false;
 		boolean inExtendsName = false;
@@ -154,6 +156,8 @@ public class CodeSearchEngineInputStreamImpl implements
 		boolean inPackageName = false;
 		String packageValue = "";
 
+		boolean inType = false;
+		
 		XMLInputFactory xmlif = XMLInputFactory.newInstance();
 		try {
 			XMLStreamReader xmlsr = xmlif.createXMLStreamReader(data);
@@ -164,23 +168,31 @@ public class CodeSearchEngineInputStreamImpl implements
 				case XMLEvent.START_ELEMENT:
 					if (xmlsr.getLocalName().equals("unit")) {
 						pathValue = xmlsr.getAttributeValue(1);
-						inUnit = !inUnit;
+						inUnit = true;
 					} else if (xmlsr.getLocalName().equals("class")) {
 						extendsValue = ""; // reset
 						classValue = "";
-						inClass = !inClass;
-					} else if (xmlsr.getLocalName().equals("extends"))
-						inExtends = !inExtends;
+						inClass = true;
+					} else if (xmlsr.getLocalName().equals("extends") && inClass)
+						inExtends = true;
 					else if (xmlsr.getLocalName().equals("name") && inExtends)
-						inExtendsName = !inExtendsName;
-					else if (xmlsr.getLocalName().equals("name") && inClass)
-						inClassName = !inClassName;
+						inExtendsName = true;
+					else if (xmlsr.getLocalName().equals("name") && inClass) {
+						inClassName = true;
+					
+						eventType = xmlsr.next();
+						if (eventType == XMLEvent.CHARACTERS) {
+							classValue = xmlsr.getText();
+						}
+					}
 					else if (xmlsr.getLocalName().equals("package")) {
-						inPackage = !inPackage;
+						inPackage = true;
 						packageValue = ""; // Reset
+					} else if (xmlsr.getLocalName().equals("type")) {
+						inType = true ;
 					}
 					if (inPackage && xmlsr.getLocalName().equals("name"))
-						inPackageName = !inPackageName;
+						inPackageName = true;
 					break;
 				case XMLEvent.CHARACTERS:
 					if (inExtendsName) {
@@ -202,11 +214,13 @@ public class CodeSearchEngineInputStreamImpl implements
 					break;
 				case XMLEvent.END_ELEMENT:
 					if (xmlsr.getLocalName().equals("unit")) {
-						inUnit = !inUnit;
+						inUnit = false;
 					} else if (xmlsr.getLocalName().equals("class")) {
-						inClass = !inClass;
-					} else if (xmlsr.getLocalName().equals("extends")) {
-						inExtends = !inExtends;
+						inClass = false;
+					} else if (xmlsr.getLocalName().equals("type")) {
+						inType = false ;
+					} else if (xmlsr.getLocalName().equals("extends") && !inType && !typeName.equals("") && !extendsValue.equals("")) {
+						inExtends = false;
 						// Get Location
 						Location locationValue = new LocationImpl(pathValue);
 						// Create Method
@@ -214,23 +228,23 @@ public class CodeSearchEngineInputStreamImpl implements
 								TypeKind.CLASS, locationValue);
 
 						// Ajout hashMap
-						// if (!hashExceptions.containsKey(extendsValue))
-						// hashExceptions.put(extendsValue,
-						// new ArrayList<Type>());
-						// hashExceptions.get(extendsValue).add(type);
+						 if (!hashExtends.containsKey(extendsValue)) {
+							 hashExtends.put(extendsValue, new ArrayList<Type>());
+						 }
+						 hashExtends.get(extendsValue).add(type);
 
 						// Got all the informations we need
 						if (extendsValue.equals(typeName)) {
 							listType.add(type);
 						}
 					} else if (xmlsr.getLocalName().equals("name") && inExtends)
-						inExtendsName = !inExtendsName;
-					else if (xmlsr.getLocalName().equals("name") && inClass)
-						inClassName = !inClassName;
+						inExtendsName = false;
+					else if (xmlsr.getLocalName().equals("name") && inClassName)
+						inClassName = false;
 					else if (xmlsr.getLocalName().equals("package"))
-						inPackage = !inPackage;
+						inPackage = false;
 					if (inPackage && xmlsr.getLocalName().equals("name"))
-						inPackageName = !inPackageName;
+						inPackageName = false;
 					break;
 				default:
 					break;
@@ -240,35 +254,22 @@ public class CodeSearchEngineInputStreamImpl implements
 			throw new RuntimeException(e);
 		}
 
-		// // Analyze if there is some level of Exception
-		// Queue<Type> tampon = new LinkedList<Type>();
-		// for (Type t : listType)
-		// tampon.add(t); // copy
-		// int tamponSizeOld = tampon.size();
-		// int tamponSizeNew = 0;
-		// boolean stop = false;
-		// while ((tampon.size() != 0) && !stop) {
-		// List<Type> toAdd = new ArrayList<Type>();
-		// if (tamponSizeOld != tamponSizeNew) {
-		// tamponSizeOld = tampon.size();
-		// for (Type t2 : tampon) {
-		// if (hashExceptions.containsKey(t2)) {
-		// // If extends a good exception
-		// for (Type t3 : hashExceptions.get(t2)) {
-		// toAdd.add(t3);
-		// }
-		// }
-		// }
-		// for (Type t : toAdd) {
-		// listType.add(t);
-		// tampon.add(t);
-		// }
-		// tamponSizeNew = tampon.size();
-		// } else {
-		// stop = true;
-		// }
-		// }
-		return listType;
+		// Analyze if there is some level of Exception
+		Queue<Type> tampon = new LinkedList<Type>();
+		
+	 	// Copy
+		tampon.addAll(hashExtends.get(typeName));
+		
+	 	while (tampon.size() != 0) {
+	 		Type head = tampon.poll();
+	 		if (hashExtends.containsKey(head.getName())) {
+	 			for (Type t : hashExtends.get(head.getName()))
+	 				tampon.offer(t);
+	 			listType.add(head);
+	 		}
+	 	}
+	 	
+	 	return listType ;
 	}
 
 	@Override
