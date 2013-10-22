@@ -15,6 +15,8 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.events.XMLEvent;
 
+import main.java.fr.idl.CodeSearchEngine.Location;
+
 import org.apache.log4j.Logger;
 import org.jdom2.Document;
 import org.jdom2.Element;
@@ -848,8 +850,62 @@ public class CodeSearchEngineInputStreamImpl implements
 
 	@Override
 	public List<Location> findCatchOf(String exceptionName, InputStream data) {
-		// TODO Auto-generated method stub
-		return null;
+		XMLInputFactory xmlif = XMLInputFactory.newInstance();
+		XMLStreamReader xmlsr;
+		String path = "" ;
+		List<Location> listLoc = new ArrayList<Location>();
+		boolean in_class = false;
+		boolean in_class_catch = false;
+		boolean in_class_catch_name = false;
+		boolean detect_exception = false;
+		
+		try {
+			xmlsr = xmlif.createXMLStreamReader(data);
+			while (xmlsr.hasNext()) {
+				int eventType = xmlsr.next();
+				switch (eventType) {
+					case XMLEvent.START_ELEMENT :
+						if(xmlsr.getLocalName().equals("unit")){
+							path = xmlsr.getAttributeValue(1);
+						}
+						if(xmlsr.getLocalName().equals("class")){
+							in_class = true;
+						}
+						if(in_class && xmlsr.getLocalName().equals("catch")){
+							in_class_catch = true;
+						}
+						if(in_class && in_class_catch && xmlsr.getLocalName().equals("name")){
+							in_class_catch_name = true;
+						}
+					break;
+					
+					case XMLEvent.CHARACTERS:
+						if(in_class && in_class_catch && in_class_catch_name){
+							//System.out.println(xmlsr.getText());
+							if(xmlsr.getText().equals(exceptionName)){
+								detect_exception = true;
+							}
+							in_class_catch_name = false;
+							in_class_catch = false;
+						}
+					break;
+					
+					case XMLEvent.END_ELEMENT:
+						if(xmlsr.getLocalName().equals("catch") && detect_exception){
+							listLoc.add(new LocationImpl(path));
+							in_class = false;
+							in_class_catch = false;
+							in_class_catch_name = false;
+							detect_exception = false;
+							path = "" ;
+						}
+					break;
+				}
+			}
+		} catch (XMLStreamException e) {
+			System.err.println(e.getMessage());
+		}
+		return listLoc;
 	}
 
 	@Override
