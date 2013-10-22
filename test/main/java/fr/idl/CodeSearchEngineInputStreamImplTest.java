@@ -1,6 +1,7 @@
 package main.java.fr.idl;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 
 import java.io.File;
@@ -11,6 +12,7 @@ import java.io.InputStream;
 import java.util.List;
 
 import main.java.fr.idl.CodeSearchEngine.Field;
+import main.java.fr.idl.CodeSearchEngine.Location;
 import main.java.fr.idl.CodeSearchEngine.Method;
 import main.java.fr.idl.CodeSearchEngine.Type;
 import main.java.fr.idl.CodeSearchEngine.TypeKind;
@@ -154,7 +156,9 @@ public class CodeSearchEngineInputStreamImplTest {
 
 	@Test
 	public void testFindNewOf() {
-		fail("Not yet implemented");
+		List<Location> listNewOf = cse.findNewOf("HashMap", data);
+
+		assertNotEquals(0, listNewOf.size()); // XXX we do not found every new
 	}
 
 	@Test

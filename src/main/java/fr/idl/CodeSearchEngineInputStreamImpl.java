@@ -504,7 +504,7 @@ public class CodeSearchEngineInputStreamImpl implements
 
 						// Build a DOM string
 						String builderDOMStructure = Util
-								.builDOMStructureString(xmlsr);
+								.builDOMMethodStructureString(xmlsr);
 						log.trace(builderDOMStructure);
 
 						// Build DOM Structure from string
@@ -681,7 +681,8 @@ public class CodeSearchEngineInputStreamImpl implements
 				// some method found
 
 				// Build a DOM string
-				String builderDOMStructure = Util.builDOMStructureString(xmlsr);
+				String builderDOMStructure = Util
+						.builDOMMethodStructureString(xmlsr);
 				log.trace(builderDOMStructure);
 
 				// Build DOM Structure from string
@@ -725,10 +726,107 @@ public class CodeSearchEngineInputStreamImpl implements
 		return Collections.emptyList();
 	}
 
+	/**
+	 * @author Alexandre Bonhomme
+	 */
 	@Override
 	public List<Location> findNewOf(String className, InputStream data) {
-		// TODO Auto-generated method stub
-		return null;
+		ArrayList<Location> listOfNew = new ArrayList<>();
+
+		XMLInputFactory xmlif = XMLInputFactory.newInstance();
+		try {
+			XMLStreamReader xmlsr = xmlif.createXMLStreamReader(data);
+
+			SAXBuilder builder = new SAXBuilder();
+			int eventType;
+			while (xmlsr.hasNext()) {
+				eventType = xmlsr.next();
+
+				// looking for 'unit'
+				if (eventType != XMLEvent.START_ELEMENT) {
+					continue;
+				}
+
+				if (!xmlsr.getLocalName().equals("unit")) {
+					continue;
+				}
+
+				// found a .java file
+				Location loc = null;// XXX Dirty
+				for (int i = 0; i < xmlsr.getAttributeCount(); i++) {
+					if (xmlsr.getAttributeLocalName(i).equals("filename")) {
+						loc = new LocationImpl(xmlsr.getAttributeValue(i));
+					}
+				}
+
+				// iterate over
+				while (xmlsr.hasNext()) {
+					eventType = xmlsr.next();
+
+					if (eventType == XMLEvent.END_ELEMENT
+							&& xmlsr.getLocalName().equals("unit")) {
+						break;
+					}
+
+					// looking for all <expr>
+					if (eventType != XMLEvent.START_ELEMENT
+							|| !xmlsr.getLocalName().equals("expr")) {
+						continue;
+					}
+
+					// looking for a 'new' just behind
+					eventType = xmlsr.next();
+					if (eventType != XMLEvent.CHARACTERS
+							|| !xmlsr.getText().matches("^new *")) {
+						continue;
+					}
+
+					// found a new
+					while (xmlsr.hasNext()) {
+						eventType = xmlsr.next();
+
+						// looking for <name>
+						if (eventType == XMLEvent.START_ELEMENT
+								&& xmlsr.getLocalName().equals("name")) {
+							break;
+						}
+					}
+
+					String instancedClassName = "";
+					eventType = xmlsr.next();
+					switch (eventType) {
+					case XMLEvent.CHARACTERS:
+						instancedClassName = xmlsr.getText();
+						break;
+
+					case XMLEvent.START_ELEMENT:
+						eventType = xmlsr.next();
+						if (eventType == XMLEvent.CHARACTERS) {
+							instancedClassName = xmlsr.getText();
+						} else {
+							// XXX
+							log.error(xmlsr.getLocalName());
+							// throw new RuntimeException(
+							// "Malformed file. Except : CHARACTERS");
+						}
+						break;
+
+					default:
+						throw new RuntimeException(
+								"Malformed file. Except : <name>...");
+					}
+
+					if (instancedClassName.equals(className)) {
+						listOfNew.add(loc);
+					}
+
+				}
+			}
+		} catch (XMLStreamException e) {
+			throw new RuntimeException(e);
+		}
+
+		return listOfNew;
 	}
 
 	@Override

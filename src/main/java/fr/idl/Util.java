@@ -59,8 +59,15 @@ public class Util {
 		}
 	}
 
-	public static String builDOMStructureString(XMLStreamReader xmlsr)
-			throws XMLStreamException {
+	/**
+	 * 
+	 * @param xmlsr
+	 * @param regexEndParsing
+	 * @return
+	 * @throws XMLStreamException
+	 */
+	public static String builDOMStructureString(XMLStreamReader xmlsr,
+			String regexEndParsing) throws XMLStreamException {
 		int eventType;
 		String builderDOMStructure = "<root>";
 
@@ -68,7 +75,7 @@ public class Util {
 			eventType = xmlsr.next();
 
 			if (eventType == XMLEvent.END_ELEMENT
-					&& xmlsr.getLocalName().matches("^function[_A-Za-z]*$")) {
+					&& xmlsr.getLocalName().matches(regexEndParsing)) {
 				break;
 			}
 
@@ -98,6 +105,18 @@ public class Util {
 		}
 
 		return builderDOMStructure + "</root>";
+
+	}
+
+	/**
+	 * 
+	 * @param xmlsr
+	 * @return
+	 * @throws XMLStreamException
+	 */
+	public static String builDOMMethodStructureString(XMLStreamReader xmlsr)
+			throws XMLStreamException {
+		return builDOMStructureString(xmlsr, "^function[_A-Za-z]*$");
 	}
 
 	/**
