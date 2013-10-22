@@ -173,7 +173,10 @@ public class CodeSearchEngineInputStreamImplTest {
 
 	@Test
 	public void testFindMethodsThrowing() {
-		fail("Not yet implemented");
+		List<Method> listMethod = cse.findMethodsThrowing("NullPointerException", data);
+		assertEquals(120, listMethod.size());
+		assertEquals("multiValueMap",listMethod.get(11).getName());
+		assertEquals("BagIterator",listMethod.get(102).getName());
 	}
 
 	@Test

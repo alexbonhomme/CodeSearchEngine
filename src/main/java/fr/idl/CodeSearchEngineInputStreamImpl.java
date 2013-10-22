@@ -844,8 +844,74 @@ public class CodeSearchEngineInputStreamImpl implements
 	@Override
 	public List<CodeSearchEngine.Method> findMethodsThrowing(
 			String exceptionName, InputStream data) {
-		// TODO Auto-generated method stub
-		return null;
+		XMLInputFactory xmlif = XMLInputFactory.newInstance();
+		XMLStreamReader xmlsr;
+		boolean in_function_throws = false ;
+		boolean in_function_throws_name = false;
+		boolean in_function = false;
+		boolean in_function_type = false;
+		boolean in_function_name = false;
+		String current_excep = "";
+		String method_name = "" ;
+		List<Method> listMethod = new ArrayList<Method>();
+		
+		try {
+			xmlsr = xmlif.createXMLStreamReader(data);
+			while (xmlsr.hasNext()) {
+				int eventType = xmlsr.next();
+				switch (eventType) {
+					case XMLEvent.START_ELEMENT :
+						if(xmlsr.getLocalName().equals("throws")){
+							in_function_throws = true;
+						}
+						if(in_function_throws && xmlsr.getLocalName().equals("name")){
+							in_function_throws_name = true;
+						}
+						
+						if(xmlsr.getLocalName().equals("function") || xmlsr.getLocalName().equals("constructor")){
+							in_function = true;
+						}
+						if(in_function && xmlsr.getLocalName().equals("type")){
+							in_function_type = true;
+						}
+						if(in_function && !in_function_type && xmlsr.getLocalName().equals("name")){
+							in_function_name = true;
+						}
+						
+					break;
+					case XMLEvent.CHARACTERS :
+						if(in_function && !in_function_type && in_function_name){
+							in_function = false;
+							in_function_name = false;
+							method_name = xmlsr.getText();
+							//System.out.println(method_name);						
+						}
+						if(in_function_throws && in_function_throws_name){
+							current_excep = xmlsr.getText() ; 
+							in_function_throws = false;
+							in_function_throws_name = false;
+						}
+					break;
+					case XMLEvent.END_ELEMENT:
+						if((xmlsr.getLocalName().equals("function"))||(xmlsr.getLocalName().equals("constructor"))){
+							in_function_throws = false;
+							in_function_throws_name = false;
+							if(current_excep.equals(exceptionName)){
+								Method m = new MethodImpl(method_name,null,null,null);
+								listMethod.add(m);
+								//System.out.println(method_name + " " + exceptionName);
+							}
+						}
+						if((xmlsr.getLocalName().equals("type")) && in_function ){
+							in_function_type = false;
+						}
+					break;
+				}
+			}
+		} catch (XMLStreamException e) {
+			System.err.println(e.getMessage());
+		}
+		return listMethod;
 	}
 
 	@Override
