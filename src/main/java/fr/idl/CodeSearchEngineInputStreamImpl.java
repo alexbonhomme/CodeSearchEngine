@@ -15,8 +15,6 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.events.XMLEvent;
 
-import main.java.fr.idl.CodeSearchEngine.Location;
-
 import org.apache.log4j.Logger;
 import org.jdom2.Document;
 import org.jdom2.Element;
@@ -174,7 +172,8 @@ public class CodeSearchEngineInputStreamImpl implements
 						extendsValue = ""; // reset
 						classValue = "";
 						inClass = true;
-					} else if (xmlsr.getLocalName().equals("extends") && inClass)
+					} else if (xmlsr.getLocalName().equals("extends")
+							&& inClass)
 						inExtends = true;
 					else if (xmlsr.getLocalName().equals("name") && inExtends)
 						inExtendsName = true;
@@ -225,10 +224,11 @@ public class CodeSearchEngineInputStreamImpl implements
 								TypeKind.CLASS, locationValue);
 
 						// Ajout hashMap
-						 if (!hashExtends.containsKey(extendsValue)) {
-							 hashExtends.put(extendsValue, new ArrayList<Type>());
-						 }
-						 hashExtends.get(extendsValue).add(type);
+						if (!hashExtends.containsKey(extendsValue)) {
+							hashExtends
+									.put(extendsValue, new ArrayList<Type>());
+						}
+						hashExtends.get(extendsValue).add(type);
 
 						// Got all the informations we need
 						if (extendsValue.equals(typeName)) {
@@ -253,11 +253,11 @@ public class CodeSearchEngineInputStreamImpl implements
 
 		// Analyze if there is some level of Exception
 		Queue<Type> tampon = new LinkedList<Type>();
-		
-	 	// Copy
+
+		// Copy
 		if (!hashExtends.containsKey(typeName))
 			return listType;
-		
+
 		tampon.addAll(hashExtends.get(typeName));
 
 		while (tampon.size() != 0) {
@@ -649,7 +649,8 @@ public class CodeSearchEngineInputStreamImpl implements
 	}
 
 	@Override
-	public List<Method> findMethodsTakingAsParameter(String typeName, InputStream data) {
+	public List<Method> findMethodsTakingAsParameter(String typeName,
+			InputStream data) {
 		List<Method> listMethod = new ArrayList<Method>();
 
 		boolean function = false;
@@ -663,7 +664,7 @@ public class CodeSearchEngineInputStreamImpl implements
 		boolean inUnit = false;
 
 		boolean typeOK = false;
-//		boolean nameOK = false;
+		// boolean nameOK = false;
 
 		String pathValue = "";
 		String typeValue = ""; // Returning type
@@ -704,8 +705,9 @@ public class CodeSearchEngineInputStreamImpl implements
 					break;
 				case XMLEvent.CHARACTERS:
 					// Extract the return type
-					if (function && parameter_list && param && decl && type && name) {
-						if (xmlsr.getText().equals(typeName)){
+					if (function && parameter_list && param && decl && type
+							&& name) {
+						if (xmlsr.getText().equals(typeName)) {
 							typeOK = true;
 						}
 					}
@@ -714,8 +716,9 @@ public class CodeSearchEngineInputStreamImpl implements
 					if (function && !type && name) {
 						nameValue = xmlsr.getText();
 					}
-					
-					if (function && type && name && !parameter_list && (xmlsr.getText() != ">")) {
+
+					if (function && type && name && !parameter_list
+							&& (xmlsr.getText() != ">")) {
 						typeValue = xmlsr.getText();
 					}
 
@@ -962,84 +965,90 @@ public class CodeSearchEngineInputStreamImpl implements
 	}
 
 	@Override
-	public List<CodeSearchEngine.Method> findMethodsThrowing(
-			String exceptionName, InputStream data) {
+	public List<Method> findMethodsThrowing(String exceptionName,
+			InputStream data) {
 		XMLInputFactory xmlif = XMLInputFactory.newInstance();
-        XMLStreamReader xmlsr;
-        boolean in_function_throws = false ;
-        boolean in_function_throws_name = false;
-        boolean in_function = false;
-        boolean in_function_type = false;
-        boolean in_function_name = false;
-        String current_excep = "";
-        String method_name = "" ;
-        List<Method> listMethod = new ArrayList<Method>();
-        
-        try {
-                xmlsr = xmlif.createXMLStreamReader(data);
-                while (xmlsr.hasNext()) {
-                        int eventType = xmlsr.next();
-                        switch (eventType) {
-                                case XMLEvent.START_ELEMENT :
-                                        if(xmlsr.getLocalName().equals("throws")){
-                                                in_function_throws = true;
-                                        }
-                                        if(in_function_throws && xmlsr.getLocalName().equals("name")){
-                                                in_function_throws_name = true;
-                                        }
-                                        
-                                        if(xmlsr.getLocalName().equals("function") || xmlsr.getLocalName().equals("constructor")){
-                                                in_function = true;
-                                        }
-                                        if(in_function && xmlsr.getLocalName().equals("type")){
-                                                in_function_type = true;
-                                        }
-                                        if(in_function && !in_function_type && xmlsr.getLocalName().equals("name")){
-                                                in_function_name = true;
-                                        }
-                                        
-                                break;
-                                case XMLEvent.CHARACTERS :
-                                        if(in_function && !in_function_type && in_function_name){
-                                                in_function = false;
-                                                in_function_name = false;
-                                                method_name = xmlsr.getText();
-                                                //System.out.println(method_name);                                                
-                                        }
-                                        if(in_function_throws && in_function_throws_name){
-                                                current_excep = xmlsr.getText() ;
-                                                in_function_throws = false;
-                                                in_function_throws_name = false;
-                                        }
-                                break;
-                                case XMLEvent.END_ELEMENT:
-                                        if((xmlsr.getLocalName().equals("function"))||(xmlsr.getLocalName().equals("constructor"))){
-                                                in_function_throws = false;
-                                                in_function_throws_name = false;
-                                                if(current_excep.equals(exceptionName)){
-                                                        Method m = new MethodImpl(method_name,null,null,null);
-                                                        listMethod.add(m);
-                                                        current_excep = "";
-                                                        //System.out.println(method_name + " " + exceptionName);
-                                                }
-                                        }
-                                        if((xmlsr.getLocalName().equals("type")) && in_function ){
-                                                in_function_type = false;
-                                        }
-                                break;
-                        }
-                }
-        } catch (XMLStreamException e) {
-                System.err.println(e.getMessage());
-        }
-        return listMethod;
+		XMLStreamReader xmlsr;
+		boolean in_function_throws = false;
+		boolean in_function_throws_name = false;
+		boolean in_function = false;
+		boolean in_function_type = false;
+		boolean in_function_name = false;
+		String current_excep = "";
+		String method_name = "";
+		List<Method> listMethod = new ArrayList<Method>();
+
+		try {
+			xmlsr = xmlif.createXMLStreamReader(data);
+			while (xmlsr.hasNext()) {
+				int eventType = xmlsr.next();
+				switch (eventType) {
+				case XMLEvent.START_ELEMENT:
+					if (xmlsr.getLocalName().equals("throws")) {
+						in_function_throws = true;
+					}
+					if (in_function_throws
+							&& xmlsr.getLocalName().equals("name")) {
+						in_function_throws_name = true;
+					}
+
+					if (xmlsr.getLocalName().equals("function")
+							|| xmlsr.getLocalName().equals("constructor")) {
+						in_function = true;
+					}
+					if (in_function && xmlsr.getLocalName().equals("type")) {
+						in_function_type = true;
+					}
+					if (in_function && !in_function_type
+							&& xmlsr.getLocalName().equals("name")) {
+						in_function_name = true;
+					}
+
+					break;
+				case XMLEvent.CHARACTERS:
+					if (in_function && !in_function_type && in_function_name) {
+						in_function = false;
+						in_function_name = false;
+						method_name = xmlsr.getText();
+						// System.out.println(method_name);
+					}
+					if (in_function_throws && in_function_throws_name) {
+						current_excep = xmlsr.getText();
+						in_function_throws = false;
+						in_function_throws_name = false;
+					}
+					break;
+				case XMLEvent.END_ELEMENT:
+					if ((xmlsr.getLocalName().equals("function"))
+							|| (xmlsr.getLocalName().equals("constructor"))) {
+						in_function_throws = false;
+						in_function_throws_name = false;
+						if (current_excep.equals(exceptionName)) {
+							Method m = new MethodImpl(method_name, null, null,
+									null);
+							listMethod.add(m);
+							current_excep = "";
+							// System.out.println(method_name + " " +
+							// exceptionName);
+						}
+					}
+					if ((xmlsr.getLocalName().equals("type")) && in_function) {
+						in_function_type = false;
+					}
+					break;
+				}
+			}
+		} catch (XMLStreamException e) {
+			System.err.println(e.getMessage());
+		}
+		return listMethod;
 	}
 
 	@Override
 	public List<Location> findCatchOf(String exceptionName, InputStream data) {
 		XMLInputFactory xmlif = XMLInputFactory.newInstance();
 		XMLStreamReader xmlsr;
-		String path = "" ;
+		String path = "";
 		List<Location> listLoc = new ArrayList<Location>();
 		boolean in_class = false;
 		boolean in_class_catch = false;

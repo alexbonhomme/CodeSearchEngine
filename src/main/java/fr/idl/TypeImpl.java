@@ -22,7 +22,10 @@ public class TypeImpl implements Type {
 
 	// Tempo
 	public TypeImpl() {
-
+		this.name = "";
+		this.fullyQualifiedPackageName = "";
+		this.kind = null;
+		this.declaration = new LocationImpl("");
 	}
 
 	@Override

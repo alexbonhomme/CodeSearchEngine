@@ -137,14 +137,13 @@ public class CodeSearchEngineInputStreamImplTest {
 				.getFullyQualifiedPackageName());
 	}
 
-	
-	
 	@Test
 	public void findMethodsTakingAsParameter() {
 		List<Method> methods = cse.findMethodsTakingAsParameter("int", data);
 		assertEquals("peek", methods.get(0).getName());
 		assertEquals("E", methods.get(0).getType().getName());
-		assertEquals("org.apache.commons.collections", methods.get(0).getType().getFullyQualifiedPackageName());
+		assertEquals("org.apache.commons.collections", methods.get(0).getType()
+				.getFullyQualifiedPackageName());
 	}
 
 	@Test
@@ -184,7 +183,7 @@ public class CodeSearchEngineInputStreamImplTest {
 
 	@Test
 	public void testFindCastsTo() {
-		fail("Not yet implemented");
+		List<Location> listCast = cse.findCastsTo("ArrayList", data);
 	}
 
 	@Test
@@ -194,18 +193,23 @@ public class CodeSearchEngineInputStreamImplTest {
 
 	@Test
 	public void testFindMethodsThrowing() {
-		List<Method> listMethod = cse.findMethodsThrowing("NullPointerException", data);
+		List<Method> listMethod = cse.findMethodsThrowing(
+				"NullPointerException", data);
 		assertEquals(120, listMethod.size());
-		assertEquals("multiValueMap",listMethod.get(11).getName());
-		assertEquals("BagIterator",listMethod.get(102).getName());
+		assertEquals("multiValueMap", listMethod.get(11).getName());
+		assertEquals("BagIterator", listMethod.get(102).getName());
 	}
 
 	@Test
 	public void testFindCatchOf() {
 		List<Location> listLoc = cse.findCatchOf("IOException", data);
 		assertEquals(2, listLoc.size());
-		assertEquals("dataset-src/org/apache/commons/collections/ExtendedProperties.java",listLoc.get(0).getFilePath());
-		assertEquals("dataset-src/org/apache/commons/collections/functors/PrototypeFactory.java",listLoc.get(1).getFilePath());
+		assertEquals(
+				"dataset-src/org/apache/commons/collections/ExtendedProperties.java",
+				listLoc.get(0).getFilePath());
+		assertEquals(
+				"dataset-src/org/apache/commons/collections/functors/PrototypeFactory.java",
+				listLoc.get(1).getFilePath());
 	}
 
 }
