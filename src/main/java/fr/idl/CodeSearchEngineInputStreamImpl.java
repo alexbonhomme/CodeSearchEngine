@@ -6,12 +6,16 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.events.XMLEvent;
+
+import main.java.fr.idl.CodeSearchEngine.Location;
 
 import org.apache.log4j.Logger;
 import org.jdom2.Document;
@@ -137,7 +141,7 @@ public class CodeSearchEngineInputStreamImpl implements
 	@Override
 	public List<Type> findSubTypesOf(String typeName, InputStream data) {
 		List<Type> listType = new ArrayList<Type>();
-		HashMap<String, List<Type>> hashExceptions = new HashMap<String, List<Type>>();
+		HashMap<String, List<Type>> hashExtends = new HashMap<String, List<Type>>();
 
 		boolean inExtends = false;
 		boolean inExtendsName = false;
@@ -154,6 +158,8 @@ public class CodeSearchEngineInputStreamImpl implements
 		boolean inPackageName = false;
 		String packageValue = "";
 
+		boolean inType = false;
+		
 		XMLInputFactory xmlif = XMLInputFactory.newInstance();
 		try {
 			XMLStreamReader xmlsr = xmlif.createXMLStreamReader(data);
@@ -164,23 +170,25 @@ public class CodeSearchEngineInputStreamImpl implements
 				case XMLEvent.START_ELEMENT:
 					if (xmlsr.getLocalName().equals("unit")) {
 						pathValue = xmlsr.getAttributeValue(1);
-						inUnit = !inUnit;
+						inUnit = true;
 					} else if (xmlsr.getLocalName().equals("class")) {
 						extendsValue = ""; // reset
 						classValue = "";
-						inClass = !inClass;
-					} else if (xmlsr.getLocalName().equals("extends"))
-						inExtends = !inExtends;
+						inClass = true;
+					} else if (xmlsr.getLocalName().equals("extends") && inClass)
+						inExtends = true;
 					else if (xmlsr.getLocalName().equals("name") && inExtends)
-						inExtendsName = !inExtendsName;
+						inExtendsName = true;
 					else if (xmlsr.getLocalName().equals("name") && inClass)
-						inClassName = !inClassName;
+						inClassName = true;
 					else if (xmlsr.getLocalName().equals("package")) {
-						inPackage = !inPackage;
+						inPackage = true;
 						packageValue = ""; // Reset
+					} else if (xmlsr.getLocalName().equals("type")) {
+						inType = true ;
 					}
 					if (inPackage && xmlsr.getLocalName().equals("name"))
-						inPackageName = !inPackageName;
+						inPackageName = true;
 					break;
 				case XMLEvent.CHARACTERS:
 					if (inExtendsName) {
@@ -202,11 +210,13 @@ public class CodeSearchEngineInputStreamImpl implements
 					break;
 				case XMLEvent.END_ELEMENT:
 					if (xmlsr.getLocalName().equals("unit")) {
-						inUnit = !inUnit;
+						inUnit = false;
 					} else if (xmlsr.getLocalName().equals("class")) {
-						inClass = !inClass;
-					} else if (xmlsr.getLocalName().equals("extends")) {
-						inExtends = !inExtends;
+						inClass = false;
+					} else if (xmlsr.getLocalName().equals("type")) {
+						inType = false ;
+					} else if (xmlsr.getLocalName().equals("extends") && !inType && !typeName.equals("") && !extendsValue.equals("")) {
+						inExtends = false;
 						// Get Location
 						Location locationValue = new LocationImpl(pathValue);
 						// Create Method
@@ -214,23 +224,23 @@ public class CodeSearchEngineInputStreamImpl implements
 								TypeKind.CLASS, locationValue);
 
 						// Ajout hashMap
-						// if (!hashExceptions.containsKey(extendsValue))
-						// hashExceptions.put(extendsValue,
-						// new ArrayList<Type>());
-						// hashExceptions.get(extendsValue).add(type);
+						 if (!hashExtends.containsKey(extendsValue)) {
+							 hashExtends.put(extendsValue, new ArrayList<Type>());
+						 }
+						 hashExtends.get(extendsValue).add(type);
 
 						// Got all the informations we need
 						if (extendsValue.equals(typeName)) {
 							listType.add(type);
 						}
 					} else if (xmlsr.getLocalName().equals("name") && inExtends)
-						inExtendsName = !inExtendsName;
-					else if (xmlsr.getLocalName().equals("name") && inClass)
-						inClassName = !inClassName;
+						inExtendsName = false;
+					else if (xmlsr.getLocalName().equals("name") && inClassName)
+						inClassName = false;
 					else if (xmlsr.getLocalName().equals("package"))
-						inPackage = !inPackage;
+						inPackage = false;
 					if (inPackage && xmlsr.getLocalName().equals("name"))
-						inPackageName = !inPackageName;
+						inPackageName = false;
 					break;
 				default:
 					break;
@@ -240,35 +250,25 @@ public class CodeSearchEngineInputStreamImpl implements
 			throw new RuntimeException(e);
 		}
 
-		// // Analyze if there is some level of Exception
-		// Queue<Type> tampon = new LinkedList<Type>();
-		// for (Type t : listType)
-		// tampon.add(t); // copy
-		// int tamponSizeOld = tampon.size();
-		// int tamponSizeNew = 0;
-		// boolean stop = false;
-		// while ((tampon.size() != 0) && !stop) {
-		// List<Type> toAdd = new ArrayList<Type>();
-		// if (tamponSizeOld != tamponSizeNew) {
-		// tamponSizeOld = tampon.size();
-		// for (Type t2 : tampon) {
-		// if (hashExceptions.containsKey(t2)) {
-		// // If extends a good exception
-		// for (Type t3 : hashExceptions.get(t2)) {
-		// toAdd.add(t3);
-		// }
-		// }
-		// }
-		// for (Type t : toAdd) {
-		// listType.add(t);
-		// tampon.add(t);
-		// }
-		// tamponSizeNew = tampon.size();
-		// } else {
-		// stop = true;
-		// }
-		// }
-		return listType;
+		// Analyze if there is some level of Exception
+		Queue<Type> tampon = new LinkedList<Type>();
+		
+	 	// Copy
+		if (!hashExtends.containsKey(typeName))
+			return listType;
+		
+		tampon.addAll(hashExtends.get(typeName));
+		
+	 	while (tampon.size() != 0) {
+	 		Type head = tampon.poll();
+	 		if (hashExtends.containsKey(head.getName())) {
+	 			for (Type t : hashExtends.get(head.getName()))
+	 				tampon.offer(t);
+	 			listType.add(head);
+	 		}
+	 	}
+	 	
+	 	return listType ;
 	}
 
 	@Override
@@ -651,10 +651,129 @@ public class CodeSearchEngineInputStreamImpl implements
 	}
 
 	@Override
-	public List<Method> findMethodsTakingAsParameter(String typeName,
-			InputStream data) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<Method> findMethodsTakingAsParameter(String typeName, InputStream data) {
+		List<Method> listMethod = new ArrayList<Method>();
+
+		boolean function = false;
+		boolean type = false;
+		boolean parameter_list = false;
+		boolean param = false;
+		boolean decl = false;
+		boolean name = false;
+		boolean inPackage = false;
+		boolean inPackageName = false;
+		boolean inUnit = false;
+
+		boolean typeOK = false;
+//		boolean nameOK = false;
+
+		String pathValue = "";
+		String typeValue = ""; // Returning type
+		String nameValue = ""; // Method name
+		String packageValue = "";
+
+		XMLInputFactory xmlif = XMLInputFactory.newInstance();
+		try {
+			XMLStreamReader xmlsr = xmlif.createXMLStreamReader(data);
+			while (xmlsr.hasNext()) {
+				int eventType = xmlsr.next();
+				// Analyze each beacon
+				switch (eventType) {
+				case XMLEvent.START_ELEMENT:
+					// Trace where we are
+					if (xmlsr.getLocalName().equals("unit")) {
+						pathValue = xmlsr.getAttributeValue(1);
+						inUnit = !inUnit;
+					}
+					if (xmlsr.getLocalName().equals("function"))
+						function = !function;
+					if (xmlsr.getLocalName().equals("type"))
+						type = !type;
+					if (xmlsr.getLocalName().equals("parameter_list"))
+						parameter_list = !parameter_list;
+					if (xmlsr.getLocalName().equals("param"))
+						param = !param;
+					if (xmlsr.getLocalName().equals("decl"))
+						decl = !decl;
+					if (xmlsr.getLocalName().equals("name"))
+						name = true;
+					if (xmlsr.getLocalName().equals("package")) {
+						inPackage = !inPackage;
+						packageValue = ""; // Reset
+					}
+					if (inPackage && xmlsr.getLocalName().equals("name"))
+						inPackageName = !inPackageName;
+					break;
+				case XMLEvent.CHARACTERS:
+					// Extract the return type
+					if (function && parameter_list && param && decl && type && name) {
+						if (xmlsr.getText().equals(typeName)){
+							typeOK = true;
+						}
+					}
+
+					// Extract the method name
+					if (function && !type && name) {
+						nameValue = xmlsr.getText();
+					}
+					
+					if (function && type && name && !parameter_list && (xmlsr.getText() != ">")) {
+						typeValue = xmlsr.getText();
+					}
+
+					// Extract package
+					if (inPackageName) {
+						if (packageValue.equals(""))
+							packageValue += xmlsr.getText();
+						else
+							packageValue += "." + xmlsr.getText();
+					}
+					
+					
+					if (typeOK) {
+						// Get Kind
+						TypeKind kindValue = TypeKind.CLASS;
+						// Get Location
+						Location locationValue = new LocationImpl(pathValue);
+						// Create Method
+						MethodImpl method = new MethodImpl(nameValue,
+								new TypeImpl(typeValue, packageValue,
+										kindValue, locationValue),
+								new TypeImpl(), new ArrayList<Type>());
+						listMethod.add(method);
+						typeOK = false;
+					}
+					break;
+				case XMLEvent.END_ELEMENT:
+					// Trace where we are
+					if (xmlsr.getLocalName().equals("function"))
+						function = !function;
+					if (xmlsr.getLocalName().equals("type"))
+						type = !type;
+					if (xmlsr.getLocalName().equals("parameter_list"))
+						parameter_list = !parameter_list;
+					if (xmlsr.getLocalName().equals("param"))
+						param = !param;
+					if (xmlsr.getLocalName().equals("decl"))
+						decl = !decl;
+					if (xmlsr.getLocalName().equals("name"))
+						name = !name;
+					if (xmlsr.getLocalName().equals("package"))
+						inPackage = !inPackage;
+
+					if (inPackage && xmlsr.getLocalName().equals("name"))
+						inPackageName = !inPackageName;
+					break;
+				default:
+					break;
+				}
+			}
+
+		} catch (XMLStreamException e) {
+			throw new RuntimeException(e);
+		}
+
+		return listMethod;
 	}
 
 	/**
@@ -859,8 +978,62 @@ public class CodeSearchEngineInputStreamImpl implements
 
 	@Override
 	public List<Location> findCatchOf(String exceptionName, InputStream data) {
-		// TODO Auto-generated method stub
-		return null;
+		XMLInputFactory xmlif = XMLInputFactory.newInstance();
+		XMLStreamReader xmlsr;
+		String path = "" ;
+		List<Location> listLoc = new ArrayList<Location>();
+		boolean in_class = false;
+		boolean in_class_catch = false;
+		boolean in_class_catch_name = false;
+		boolean detect_exception = false;
+		
+		try {
+			xmlsr = xmlif.createXMLStreamReader(data);
+			while (xmlsr.hasNext()) {
+				int eventType = xmlsr.next();
+				switch (eventType) {
+					case XMLEvent.START_ELEMENT :
+						if(xmlsr.getLocalName().equals("unit")){
+							path = xmlsr.getAttributeValue(1);
+						}
+						if(xmlsr.getLocalName().equals("class")){
+							in_class = true;
+						}
+						if(in_class && xmlsr.getLocalName().equals("catch")){
+							in_class_catch = true;
+						}
+						if(in_class && in_class_catch && xmlsr.getLocalName().equals("name")){
+							in_class_catch_name = true;
+						}
+					break;
+					
+					case XMLEvent.CHARACTERS:
+						if(in_class && in_class_catch && in_class_catch_name){
+							//System.out.println(xmlsr.getText());
+							if(xmlsr.getText().equals(exceptionName)){
+								detect_exception = true;
+							}
+							in_class_catch_name = false;
+							in_class_catch = false;
+						}
+					break;
+					
+					case XMLEvent.END_ELEMENT:
+						if(xmlsr.getLocalName().equals("catch") && detect_exception){
+							listLoc.add(new LocationImpl(path));
+							in_class = false;
+							in_class_catch = false;
+							in_class_catch_name = false;
+							detect_exception = false;
+							path = "" ;
+						}
+					break;
+				}
+			}
+		} catch (XMLStreamException e) {
+			System.err.println(e.getMessage());
+		}
+		return listLoc;
 	}
 
 	@Override
