@@ -137,9 +137,14 @@ public class CodeSearchEngineInputStreamImplTest {
 				.getFullyQualifiedPackageName());
 	}
 
+	
+	
 	@Test
-	public void testFindMethodsTakingAsParameter() {
-		fail("Not yet implemented");
+	public void findMethodsTakingAsParameter() {
+		List<Method> methods = cse.findMethodsTakingAsParameter("int", data);
+		assertEquals("peek", methods.get(0).getName());
+		assertEquals("E", methods.get(0).getType().getName());
+		assertEquals("org.apache.commons.collections", methods.get(0).getType().getFullyQualifiedPackageName());
 	}
 
 	@Test
@@ -156,9 +161,22 @@ public class CodeSearchEngineInputStreamImplTest {
 
 	@Test
 	public void testFindNewOf() {
-		List<Location> listNewOf = cse.findNewOf("HashMap", data);
+		List<Location> listNewOf = cse.findNewOf("ArrayList", data);
 
-		assertNotEquals(0, listNewOf.size()); // XXX we do not found every new
+		assertNotEquals(0, listNewOf.size());
+
+		// 1858
+		assertEquals(listNewOf.get(0).getFilePath(),
+				"dataset-src/org/apache/commons/collections/CollectionUtils.java");
+
+		// 3353
+		assertEquals(listNewOf.get(6).getFilePath(),
+				"dataset-src/org/apache/commons/collections/EnumerationUtils.java");
+
+		// 3554
+		assertEquals(listNewOf.get(7).getFilePath(),
+				"dataset-src/org/apache/commons/collections/ExtendedProperties.java");
+
 	}
 
 	@Test
@@ -173,16 +191,14 @@ public class CodeSearchEngineInputStreamImplTest {
 
 	@Test
 	public void testFindMethodsThrowing() {
-		fail("Not yet implemented");
+		List<Method> listMethod = cse.findMethodsThrowing("NullPointerException", data);
+		assertEquals(120, listMethod.size());
+		assertEquals("multiValueMap",listMethod.get(11).getName());
+		assertEquals("BagIterator",listMethod.get(102).getName());
 	}
 
 	@Test
 	public void testFindCatchOf() {
-		fail("Not yet implemented");
-	}
-
-	@Test
-	public void testFindClassesAnnotatedWith() {
 		fail("Not yet implemented");
 	}
 

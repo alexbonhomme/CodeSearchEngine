@@ -66,16 +66,19 @@ public class Util {
 	 * @return
 	 * @throws XMLStreamException
 	 */
+	// TODO check deeper of 'regexEndParsing'
 	public static String builDOMStructureString(XMLStreamReader xmlsr,
 			String regexEndParsing) throws XMLStreamException {
-		int eventType;
+		int deepLevel = 0;
 		String builderDOMStructure = "<root>";
 
+		int eventType;
 		while (xmlsr.hasNext()) {
 			eventType = xmlsr.next();
 
 			if (eventType == XMLEvent.END_ELEMENT
-					&& xmlsr.getLocalName().matches(regexEndParsing)) {
+					&& xmlsr.getLocalName().matches(regexEndParsing)
+					&& deepLevel == 0) {
 				break;
 			}
 
@@ -83,9 +86,13 @@ public class Util {
 			switch (eventType) {
 			case XMLEvent.START_ELEMENT:
 				builderDOMStructure += "<" + xmlsr.getLocalName() + ">";
+
+				++deepLevel;
 				break;
 			case XMLEvent.END_ELEMENT:
 				builderDOMStructure += "</" + xmlsr.getLocalName() + ">";
+
+				--deepLevel;
 				break;
 
 			case XMLEvent.CHARACTERS:
@@ -95,11 +102,6 @@ public class Util {
 
 			default:
 
-				break;
-			}
-
-			if (eventType == XMLEvent.END_ELEMENT
-					&& xmlsr.getLocalName().equals("parameter_list")) {
 				break;
 			}
 		}
@@ -114,9 +116,53 @@ public class Util {
 	 * @return
 	 * @throws XMLStreamException
 	 */
+	// TODO used 'builDOMStructureString'
 	public static String builDOMMethodStructureString(XMLStreamReader xmlsr)
 			throws XMLStreamException {
-		return builDOMStructureString(xmlsr, "^function[_A-Za-z]*$");
+		int deepLevel = 0;
+		String builderDOMStructure = "<root>";
+
+		int eventType;
+		while (xmlsr.hasNext()) {
+			eventType = xmlsr.next();
+
+			if (eventType == XMLEvent.END_ELEMENT
+					&& xmlsr.getLocalName().matches("^function[_A-Za-z]*$")
+					&& deepLevel == 0) {
+				break;
+			}
+
+			// build ur DOM string
+			switch (eventType) {
+			case XMLEvent.START_ELEMENT:
+				builderDOMStructure += "<" + xmlsr.getLocalName() + ">";
+
+				++deepLevel;
+				break;
+			case XMLEvent.END_ELEMENT:
+				builderDOMStructure += "</" + xmlsr.getLocalName() + ">";
+
+				--deepLevel;
+				break;
+
+			case XMLEvent.CHARACTERS:
+				builderDOMStructure += Util.escapeSpecialsCaract(xmlsr
+						.getText());
+				break;
+
+			default:
+
+				break;
+			}
+
+			// just for method
+			if (eventType == XMLEvent.END_ELEMENT
+					&& xmlsr.getLocalName().equals("parameter_list")) {
+				break;
+			}
+		}
+
+		return builderDOMStructure + "</root>";
 	}
 
 	/**

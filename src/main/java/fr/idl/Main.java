@@ -32,10 +32,10 @@ public class Main {
 
 			// Call methods returning type + print + timer
 			double start = System.currentTimeMillis();
-			List<Type> l = oneShot.findSubTypesOf("Exception", fis);
+			List<Method> l = oneShot.findMethodsTakingAsParameter ("Bag", fis);
 			double end = System.currentTimeMillis();
-			for (Type t : l) {
-				System.out.println(t);
+			for (Method t : l) {
+				System.out.println(t.getName());
 			}
 			String res ;
 			if (l.size() > 1) res = " results" ; else res = " result";

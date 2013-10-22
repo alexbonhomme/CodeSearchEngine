@@ -652,11 +652,131 @@ public class CodeSearchEngineInputStreamImpl implements
 	}
 
 	@Override
-	public List<Method> findMethodsTakingAsParameter(String typeName,
-			InputStream data) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<Method> findMethodsTakingAsParameter(String typeName, InputStream data) {
+		List<Method> listMethod = new ArrayList<Method>();
+
+		boolean function = false;
+		boolean type = false;
+		boolean parameter_list = false;
+		boolean param = false;
+		boolean decl = false;
+		boolean name = false;
+		boolean inPackage = false;
+		boolean inPackageName = false;
+		boolean inUnit = false;
+
+		boolean typeOK = false;
+//		boolean nameOK = false;
+
+		String pathValue = "";
+		String typeValue = ""; // Returning type
+		String nameValue = ""; // Method name
+		String packageValue = "";
+
+		XMLInputFactory xmlif = XMLInputFactory.newInstance();
+		try {
+			XMLStreamReader xmlsr = xmlif.createXMLStreamReader(data);
+			while (xmlsr.hasNext()) {
+				int eventType = xmlsr.next();
+				// Analyze each beacon
+				switch (eventType) {
+				case XMLEvent.START_ELEMENT:
+					// Trace where we are
+					if (xmlsr.getLocalName().equals("unit")) {
+						pathValue = xmlsr.getAttributeValue(1);
+						inUnit = !inUnit;
+					}
+					if (xmlsr.getLocalName().equals("function"))
+						function = !function;
+					if (xmlsr.getLocalName().equals("type"))
+						type = !type;
+					if (xmlsr.getLocalName().equals("parameter_list"))
+						parameter_list = !parameter_list;
+					if (xmlsr.getLocalName().equals("param"))
+						param = !param;
+					if (xmlsr.getLocalName().equals("decl"))
+						decl = !decl;
+					if (xmlsr.getLocalName().equals("name"))
+						name = true;
+					if (xmlsr.getLocalName().equals("package")) {
+						inPackage = !inPackage;
+						packageValue = ""; // Reset
+					}
+					if (inPackage && xmlsr.getLocalName().equals("name"))
+						inPackageName = !inPackageName;
+					break;
+				case XMLEvent.CHARACTERS:
+					// Extract the return type
+					if (function && parameter_list && param && decl && type && name) {
+						if (xmlsr.getText().equals(typeName)){
+							typeOK = true;
+						}
+					}
+
+					// Extract the method name
+					if (function && !type && name) {
+						nameValue = xmlsr.getText();
+					}
+					
+					if (function && type && name && !parameter_list && (xmlsr.getText() != ">")) {
+						typeValue = xmlsr.getText();
+					}
+
+					// Extract package
+					if (inPackageName) {
+						if (packageValue.equals(""))
+							packageValue += xmlsr.getText();
+						else
+							packageValue += "." + xmlsr.getText();
+					}
+					
+					
+					if (typeOK) {
+						// Get Kind
+						TypeKind kindValue = TypeKind.CLASS;
+						// Get Location
+						Location locationValue = new LocationImpl(pathValue);
+						// Create Method
+						MethodImpl method = new MethodImpl(nameValue,
+								new TypeImpl(typeValue, packageValue,
+										kindValue, locationValue),
+								new TypeImpl(), new ArrayList<Type>());
+						listMethod.add(method);
+						typeOK = false;
+					}
+					break;
+				case XMLEvent.END_ELEMENT:
+					// Trace where we are
+					if (xmlsr.getLocalName().equals("function"))
+						function = !function;
+					if (xmlsr.getLocalName().equals("type"))
+						type = !type;
+					if (xmlsr.getLocalName().equals("parameter_list"))
+						parameter_list = !parameter_list;
+					if (xmlsr.getLocalName().equals("param"))
+						param = !param;
+					if (xmlsr.getLocalName().equals("decl"))
+						decl = !decl;
+					if (xmlsr.getLocalName().equals("name"))
+						name = !name;
+					if (xmlsr.getLocalName().equals("package"))
+						inPackage = !inPackage;
+
+					if (inPackage && xmlsr.getLocalName().equals("name"))
+						inPackageName = !inPackageName;
+					break;
+				default:
+					break;
+				}
+			}
+
+		} catch (XMLStreamException e) {
+			throw new RuntimeException(e);
+		}
+
+		return listMethod;
 	}
+
 
 	/**
 	 * @author Alexandre Bonhomme
@@ -782,43 +902,42 @@ public class CodeSearchEngineInputStreamImpl implements
 						continue;
 					}
 
-					// found a new
-					while (xmlsr.hasNext()) {
-						eventType = xmlsr.next();
-
-						// looking for <name>
-						if (eventType == XMLEvent.START_ELEMENT
-								&& xmlsr.getLocalName().equals("name")) {
-							break;
-						}
-					}
-
-					String instancedClassName = "";
 					eventType = xmlsr.next();
-					switch (eventType) {
-					case XMLEvent.CHARACTERS:
-						instancedClassName = xmlsr.getText();
-						break;
 
-					case XMLEvent.START_ELEMENT:
+					// Build a DOM string
+					String builderDOMStructure = "";
+					if (xmlsr.getLocalName().equals("class")) {
+						// get <super>
 						eventType = xmlsr.next();
-						if (eventType == XMLEvent.CHARACTERS) {
-							instancedClassName = xmlsr.getText();
-						} else {
-							// XXX
-							log.error(xmlsr.getLocalName());
-							// throw new RuntimeException(
-							// "Malformed file. Except : CHARACTERS");
-						}
-						break;
 
-					default:
-						throw new RuntimeException(
-								"Malformed file. Except : <name>...");
+						builderDOMStructure = Util.builDOMStructureString(
+								xmlsr, xmlsr.getLocalName());
+					} else {
+						builderDOMStructure = Util.builDOMStructureString(
+								xmlsr, xmlsr.getLocalName());
 					}
 
-					if (instancedClassName.equals(className)) {
-						listOfNew.add(loc);
+					log.trace(builderDOMStructure);
+
+					// Build DOM Structure from string
+					InputStream inputStreamDOM = new ByteArrayInputStream(
+							builderDOMStructure.getBytes());
+
+					try {
+						Document document = (Document) builder
+								.build(inputStreamDOM);
+						Element rootNode = document.getRootElement();
+
+						String instancedClassName = Util.getFullName(rootNode
+								.getChild("name"));
+						if (instancedClassName.equals(className)) {
+							listOfNew.add(loc);
+						}
+
+					} catch (IOException e) {
+						throw new RuntimeException(e);
+					} catch (JDOMException e) {
+						throw new RuntimeException(e);
 					}
 
 				}
@@ -826,6 +945,8 @@ public class CodeSearchEngineInputStreamImpl implements
 		} catch (XMLStreamException e) {
 			throw new RuntimeException(e);
 		}
+
+		log.debug(listOfNew.size());
 
 		return listOfNew;
 	}
@@ -845,8 +966,74 @@ public class CodeSearchEngineInputStreamImpl implements
 	@Override
 	public List<CodeSearchEngine.Method> findMethodsThrowing(
 			String exceptionName, InputStream data) {
-		// TODO Auto-generated method stub
-		return null;
+		XMLInputFactory xmlif = XMLInputFactory.newInstance();
+		XMLStreamReader xmlsr;
+		boolean in_function_throws = false ;
+		boolean in_function_throws_name = false;
+		boolean in_function = false;
+		boolean in_function_type = false;
+		boolean in_function_name = false;
+		String current_excep = "";
+		String method_name = "" ;
+		List<Method> listMethod = new ArrayList<Method>();
+		
+		try {
+			xmlsr = xmlif.createXMLStreamReader(data);
+			while (xmlsr.hasNext()) {
+				int eventType = xmlsr.next();
+				switch (eventType) {
+					case XMLEvent.START_ELEMENT :
+						if(xmlsr.getLocalName().equals("throws")){
+							in_function_throws = true;
+						}
+						if(in_function_throws && xmlsr.getLocalName().equals("name")){
+							in_function_throws_name = true;
+						}
+						
+						if(xmlsr.getLocalName().equals("function") || xmlsr.getLocalName().equals("constructor")){
+							in_function = true;
+						}
+						if(in_function && xmlsr.getLocalName().equals("type")){
+							in_function_type = true;
+						}
+						if(in_function && !in_function_type && xmlsr.getLocalName().equals("name")){
+							in_function_name = true;
+						}
+						
+					break;
+					case XMLEvent.CHARACTERS :
+						if(in_function && !in_function_type && in_function_name){
+							in_function = false;
+							in_function_name = false;
+							method_name = xmlsr.getText();
+							//System.out.println(method_name);						
+						}
+						if(in_function_throws && in_function_throws_name){
+							current_excep = xmlsr.getText() ; 
+							in_function_throws = false;
+							in_function_throws_name = false;
+						}
+					break;
+					case XMLEvent.END_ELEMENT:
+						if((xmlsr.getLocalName().equals("function"))||(xmlsr.getLocalName().equals("constructor"))){
+							in_function_throws = false;
+							in_function_throws_name = false;
+							if(current_excep.equals(exceptionName)){
+								Method m = new MethodImpl(method_name,null,null,null);
+								listMethod.add(m);
+								//System.out.println(method_name + " " + exceptionName);
+							}
+						}
+						if((xmlsr.getLocalName().equals("type")) && in_function ){
+							in_function_type = false;
+						}
+					break;
+				}
+			}
+		} catch (XMLStreamException e) {
+			System.err.println(e.getMessage());
+		}
+		return listMethod;
 	}
 
 	@Override
