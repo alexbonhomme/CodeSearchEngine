@@ -177,14 +177,8 @@ public class CodeSearchEngineInputStreamImpl implements
 						inExtends = true;
 					else if (xmlsr.getLocalName().equals("name") && inExtends)
 						inExtendsName = true;
-					else if (xmlsr.getLocalName().equals("name") && inClass) {
+					else if (xmlsr.getLocalName().equals("name") && inClass)
 						inClassName = true;
-					
-						eventType = xmlsr.next();
-						if (eventType == XMLEvent.CHARACTERS) {
-							classValue = xmlsr.getText();
-						}
-					}
 					else if (xmlsr.getLocalName().equals("package")) {
 						inPackage = true;
 						packageValue = ""; // Reset
