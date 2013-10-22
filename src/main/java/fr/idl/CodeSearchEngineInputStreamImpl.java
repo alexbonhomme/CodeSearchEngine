@@ -258,7 +258,7 @@ public class CodeSearchEngineInputStreamImpl implements
 		Queue<Type> tampon = new LinkedList<Type>();
 		
 	 	// Copy
-		if (hashExtends.containsKey(typeName))
+		if (!hashExtends.containsKey(typeName))
 			return listType;
 		
 		tampon.addAll(hashExtends.get(typeName));
